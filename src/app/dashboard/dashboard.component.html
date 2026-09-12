@@ -1,0 +1,119 @@
+<main class="app-shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Hero Dashboard</p>
+      <h1>{{ title }}</h1>
+      <p class="welcome-name">Welcome, {{ userName }}</p>
+    </div>
+    <div class="topbar-actions">
+      <div class="level-pill" aria-live="polite">
+        <span>LVL</span>
+        <strong>{{ playerLevel }}</strong>
+      </div>
+      <a class="ghost-button" routerLink="/account">Account</a>
+      <button type="button" class="ghost-button" (click)="signOut()">
+        Sign out
+      </button>
+    </div>
+  </header>
+
+  <section class="summary-grid">
+    <article class="panel hero-panel">
+      <p class="label">Current Quest Rank</p>
+      <h2>{{ playerClass }}</h2>
+      <div class="xp-row">
+        <span>Total XP</span>
+        <strong>{{ totalXp }} XP</strong>
+      </div>
+      <div class="progress-bar">
+        <span [style.width.%]="percentOf(Math.abs(totalXp), 250)"></span>
+      </div>
+    </article>
+
+    <article class="panel stat-panel">
+      <p class="label">Character Sheet</p>
+      <div class="stat-list">
+        @for (stat of statSummaries; track stat.name) {
+          <div class="stat-item">
+            <div class="stat-header">
+              <span>{{ stat.name }}</span>
+              <strong>{{ stat.total }}</strong>
+            </div>
+            <div class="mini-bar">
+              <span [style.width.%]="stat.progress * 100"></span>
+            </div>
+          </div>
+        }
+      </div>
+    </article>
+  </section>
+
+  <section class="quest-panel panel">
+    <div class="section-heading">
+      <h3>Active Quests</h3>
+      <button type="button" (click)="showHabitForm = !showHabitForm">
+        {{ showHabitForm ? "Close" : "+ New Habit" }}
+      </button>
+    </div>
+
+    @if (showHabitForm) {
+      <app-habit-form (habitSubmitted)="createHabit($event)"></app-habit-form>
+    }
+
+    @if (errorMessage) {
+      <p class="error-message">{{ errorMessage }}</p>
+    }
+
+    <div class="habit-grid">
+      @for (entry of habits; track entry.habit.id) {
+        <article class="habit-card">
+          <div class="habit-head">
+            <div>
+              <p class="attribute-badge">{{ entry.habit.attribute }}</p>
+              <h4>{{ entry.habit.title }}</h4>
+            </div>
+            <span
+              class="habit-type"
+              [class.negative]="entry.habit.type === 'negative'"
+            >
+              {{ entry.habit.type }}
+            </span>
+          </div>
+
+          <p class="habit-desc">{{ entry.habit.description }}</p>
+
+          <div class="habit-meta">
+            <span>
+              {{ entry.completions }}/{{ entry.habit.targetPerWeek }} this week
+            </span>
+            <strong>
+              {{
+                habitRules.calculateWeeklyResult(entry.habit, entry.completions)
+                  .totalXp
+              }}
+              XP
+            </strong>
+          </div>
+
+          <div class="mini-bar">
+            <span
+              [style.width.%]="
+                percentOf(entry.completions, entry.habit.targetPerWeek)
+              "
+            ></span>
+          </div>
+
+          <div class="habit-actions">
+            <button
+              type="button"
+              class="primary-button"
+              (click)="completeHabit(entry.habit.id)"
+            >
+              Mark complete
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+</main>

@@ -1,0 +1,119 @@
+:host {
+  display: block;
+}
+
+.account-shell {
+  max-width: 720px;
+  margin: 32px auto 0;
+  padding: 0 20px 48px;
+}
+
+.account-nav {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+}
+
+.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-decoration: none;
+  background: rgba(148, 163, 184, 0.12);
+  color: white;
+}
+
+.account-panel {
+  background: rgba(17, 24, 39, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.4);
+  padding: 20px;
+}
+
+.section-heading {
+  margin-bottom: 16px;
+}
+
+.section-heading h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.avatar-badge {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+  font-weight: 800;
+}
+
+.identity-label {
+  margin: 0 0 4px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+}
+
+.account-actions {
+  display: grid;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.account-actions label {
+  display: grid;
+  gap: 8px;
+  color: #dbeafe;
+}
+
+.account-actions input {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: white;
+}
+
+.primary-button,
+.danger-button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+}
+
+.danger-button {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+}
+
+.account-message {
+  margin: 14px 0 0;
+  color: #cbd5e1;
+}

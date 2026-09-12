@@ -1,0 +1,38 @@
+<main class="account-shell">
+  <nav class="account-nav">
+    <a routerLink="/dashboard" class="ghost-button">Return to dashboard</a>
+  </nav>
+
+  <section class="panel account-panel">
+    <div class="section-heading">
+      <h3>Account Settings</h3>
+    </div>
+
+    <div class="account-identity">
+      <div class="avatar-badge">{{ userInitials }}</div>
+      <div>
+        <p class="identity-label">Logged in as</p>
+        <strong>{{ userName }}</strong>
+      </div>
+    </div>
+
+    <div class="account-actions">
+      <label>
+        <span>Email</span>
+        <input type="email" [(ngModel)]="form.email" name="accountEmail" />
+      </label>
+
+      <button type="button" class="primary-button" (click)="resetPassword()">
+        Reset password
+      </button>
+
+      <button type="button" class="danger-button" (click)="deleteAccount()">
+        Delete account
+      </button>
+    </div>
+
+    @if (accountActionMessage) {
+      <p class="account-message">{{ accountActionMessage }}</p>
+    }
+  </section>
+</main>

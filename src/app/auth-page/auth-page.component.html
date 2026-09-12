@@ -1,0 +1,93 @@
+@if (!isConfigured) {
+  <main class="auth-shell">
+    <section class="auth-card">
+      <p class="eyebrow">Supabase Setup Required</p>
+      <h1>Connect your project</h1>
+      <p class="auth-copy">
+        Add your Supabase URL and anon key to the environment file before
+        continuing.
+      </p>
+    </section>
+  </main>
+} @else {
+  <main class="auth-shell">
+    <section class="auth-card">
+      <p class="eyebrow">
+        {{ authMode === "sign-in" ? "Welcome back" : "Create account" }}
+      </p>
+      <h1>
+        {{ authMode === "sign-in" ? "Enter the guild" : "Create your hero" }}
+      </h1>
+
+      <div class="auth-toggle">
+        <button
+          type="button"
+          [class.active]="authMode === 'sign-in'"
+          (click)="authMode = 'sign-in'"
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          [class.active]="authMode === 'sign-up'"
+          (click)="authMode = 'sign-up'"
+        >
+          Sign up
+        </button>
+      </div>
+
+      <form class="auth-form" (ngSubmit)="submitAuth()">
+        @if (authMode === "sign-up") {
+          <label>
+            <span>Display name</span>
+            <input type="text" [(ngModel)]="form.fullName" name="fullName" />
+          </label>
+        }
+
+        <label>
+          <span>Email</span>
+          <input type="email" [(ngModel)]="form.email" name="email" required />
+        </label>
+
+        <label>
+          <span>Password</span>
+          <input
+            type="password"
+            [(ngModel)]="form.password"
+            name="password"
+            required
+          />
+        </label>
+
+        @if (errorMessage) {
+          <p class="error-message">{{ errorMessage }}</p>
+        }
+
+        @if (successMessage) {
+          <p class="success-message">{{ successMessage }}</p>
+        }
+
+        <button type="submit" class="primary-button" [disabled]="loading">
+          {{
+            loading
+              ? "Processing..."
+              : authMode === "sign-in"
+                ? "Sign in"
+                : "Create account"
+          }}
+        </button>
+
+        @if (authMode === "sign-in") {
+          <button
+            type="button"
+            class="link-button"
+            [disabled]="loading"
+            (click)="resetPassword()"
+          >
+            Forgot password?
+          </button>
+        }
+      </form>
+    </section>
+  </main>
+}

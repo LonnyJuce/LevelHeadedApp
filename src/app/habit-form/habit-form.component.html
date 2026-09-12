@@ -1,0 +1,68 @@
+<form class="habit-form" (ngSubmit)="submit()">
+  <label>
+    <span>Title</span>
+    <input type="text" [(ngModel)]="form.title" name="habitTitle" required />
+  </label>
+
+  <label>
+    <span>Description</span>
+    <textarea
+      rows="3"
+      [(ngModel)]="form.description"
+      name="habitDescription"
+    ></textarea>
+  </label>
+
+  <div class="habit-form-grid">
+    <label>
+      <span>Type</span>
+      <select [(ngModel)]="form.type" name="habitType">
+        <option [ngValue]="HabitType.POSITIVE">Positive</option>
+        <option [ngValue]="HabitType.NEGATIVE">Negative</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Attribute</span>
+      <select [(ngModel)]="form.attribute" name="habitAttribute">
+        @for (attribute of stats; track attribute) {
+          <option [ngValue]="attribute">{{ attribute }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Target / week</span>
+      <input
+        type="number"
+        [(ngModel)]="form.targetPerWeek"
+        name="targetPerWeek"
+        min="1"
+      />
+    </label>
+
+    <label>
+      <span>XP / completion</span>
+      <input
+        type="number"
+        [(ngModel)]="form.xpPerCompletion"
+        name="xpPerCompletion"
+        min="1"
+      />
+    </label>
+
+    <label>
+      <span>Bonus XP</span>
+      <input
+        type="number"
+        [(ngModel)]="form.bonusXpForFullWeek"
+        name="bonusXpForFullWeek"
+        min="0"
+      />
+    </label>
+  </div>
+
+  <div class="habit-form-actions">
+    <button type="submit" class="primary-button">Create habit</button>
+  </div>
+</form>
