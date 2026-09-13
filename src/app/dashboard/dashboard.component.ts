@@ -51,7 +51,6 @@ interface HexStatPoint {
   imports: [
     FormsModule,
     RouterLink,
-    HabitFormComponent,
     MatButtonModule,
     MatDialogModule,
     MatSnackBarModule,
