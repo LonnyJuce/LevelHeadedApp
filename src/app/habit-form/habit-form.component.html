@@ -1,7 +1,13 @@
 <form class="habit-form" (ngSubmit)="submit()">
   <label>
     <span>Title</span>
-    <input type="text" [(ngModel)]="form.title" name="habitTitle" required />
+    <input
+      type="text"
+      [(ngModel)]="form.title"
+      name="habitTitle"
+      required
+      minlength="1"
+    />
   </label>
 
   <label>
@@ -24,7 +30,12 @@
 
     <label>
       <span>Attribute</span>
-      <select [(ngModel)]="form.attribute" name="habitAttribute">
+      <select
+        [(ngModel)]="form.attribute"
+        name="habitAttribute"
+        required
+        [ngModelOptions]="{ updateOn: 'blur' }"
+      >
         @for (attribute of stats; track attribute) {
           <option [ngValue]="attribute">{{ attribute }}</option>
         }
@@ -38,6 +49,8 @@
         [(ngModel)]="form.targetPerWeek"
         name="targetPerWeek"
         min="1"
+        step="1"
+        required
       />
     </label>
 
@@ -48,6 +61,8 @@
         [(ngModel)]="form.xpPerCompletion"
         name="xpPerCompletion"
         min="1"
+        step="1"
+        required
       />
     </label>
 
@@ -58,11 +73,15 @@
         [(ngModel)]="form.bonusXpForFullWeek"
         name="bonusXpForFullWeek"
         min="0"
+        step="1"
+        required
       />
     </label>
   </div>
 
   <div class="habit-form-actions">
-    <button type="submit" class="primary-button">Create habit</button>
+    <button mat-flat-button type="submit" [disabled]="!isFormValid">
+      Create habit
+    </button>
   </div>
 </form>

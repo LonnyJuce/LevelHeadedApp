@@ -1,6 +1,6 @@
 <main class="account-shell">
   <nav class="account-nav">
-    <a routerLink="/dashboard" class="ghost-button">Return to dashboard</a>
+    <a mat-stroked-button routerLink="/dashboard">Return to dashboard</a>
   </nav>
 
   <section class="panel account-panel">
@@ -22,11 +22,16 @@
         <input type="email" [(ngModel)]="form.email" name="accountEmail" />
       </label>
 
-      <button type="button" class="primary-button" (click)="resetPassword()">
+      <button mat-flat-button type="button" (click)="resetPassword()">
         Reset password
       </button>
 
-      <button type="button" class="danger-button" (click)="deleteAccount()">
+      <button
+        mat-stroked-button
+        type="button"
+        color="warn"
+        (click)="deleteAccount()"
+      >
         Delete account
       </button>
     </div>

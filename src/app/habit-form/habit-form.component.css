@@ -24,6 +24,16 @@
   color: white;
 }
 
+.habit-form input[type="number"] {
+  appearance: textfield;
+}
+
+.habit-form input[type="number"]::-webkit-inner-spin-button,
+.habit-form input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+  filter: invert(1) brightness(1.4);
+}
+
 .habit-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -36,12 +46,7 @@
   gap: 12px;
 }
 
-.primary-button {
-  border: none;
+button[mat-flat-button] {
   border-radius: 10px;
-  padding: 10px 14px;
   font-weight: 700;
-  cursor: pointer;
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
-  color: white;
 }

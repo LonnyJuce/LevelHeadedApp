@@ -17,7 +17,7 @@ create table if not exists public.habits (
   title text not null,
   description text,
   habit_type text not null check (habit_type in ('positive', 'negative')),
-  attribute text not null check (attribute in ('Strength', 'Endurance', 'Intelligence', 'Wisdom', 'Agility', 'Perception')),
+  attribute text not null check (attribute in ('Strength', 'Constitution', 'Dexterity', 'Intelligence', 'Willpower', 'Charisma')),
   target_per_week integer not null default 1 check (target_per_week > 0),
   xp_per_completion integer not null default 10 check (xp_per_completion > 0),
   bonus_xp_for_full_week integer not null default 0,

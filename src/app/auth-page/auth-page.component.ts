@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { SupabaseService } from '../core/supabase.service';
 
 @Component({
   selector: 'app-auth-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, MatButtonModule],
   templateUrl: './auth-page.component.html',
   styleUrl: './auth-page.component.css',
 })

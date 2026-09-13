@@ -1,6 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   HabitAttribute,
   HabitDefinition,
@@ -13,16 +16,25 @@ import {
   HabitFormComponent,
   type HabitFormValues,
 } from '../habit-form/habit-form.component';
+import { HabitDeleteDialogComponent } from './habit-delete-dialog.component';
 
 interface HabitProgress {
   habit: HabitDefinition;
   completions: number;
+  isActive: boolean;
 }
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, RouterLink, HabitFormComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    HabitFormComponent,
+    MatButtonModule,
+    MatDialogModule,
+    MatSnackBarModule,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -33,114 +45,81 @@ export class DashboardComponent implements OnInit, OnDestroy {
   isConfigured = false;
   isAuthenticated = false;
   loading = false;
+  isDataReady = false;
   errorMessage = '';
   showHabitForm = false;
   userName = 'Hero';
+  levelUpToast = '';
   private authSubscription?: { unsubscribe: () => void };
+  private levelUpTimeoutId?: number;
+  private lastLevel = 1;
 
   readonly HabitType = HabitType;
   readonly HabitAttribute = HabitAttribute;
   readonly stats = Object.values(HabitAttribute);
 
-  private readonly demoHabits: HabitProgress[] = [
-    {
-      habit: {
-        id: 'exercise',
-        title: 'Exercise 5x a week',
-        description: 'Train with focus and consistency.',
-        type: HabitType.POSITIVE,
-        attribute: HabitAttribute.STRENGTH,
-        targetPerWeek: 5,
-        xpPerCompletion: 25,
-        bonusXpForFullWeek: 50,
-      },
-      completions: 4,
-    },
-    {
-      habit: {
-        id: 'deep-work',
-        title: 'Deep Work Block',
-        description: 'Complete two focused study sessions.',
-        type: HabitType.POSITIVE,
-        attribute: HabitAttribute.INTELLIGENCE,
-        targetPerWeek: 2,
-        xpPerCompletion: 30,
-        bonusXpForFullWeek: 40,
-      },
-      completions: 2,
-    },
-    {
-      habit: {
-        id: 'no-junk-food',
-        title: 'No Junk Food',
-        description: 'Avoid processed snacks and sugar binges.',
-        type: HabitType.NEGATIVE,
-        attribute: HabitAttribute.WILLPOWER,
-        targetPerWeek: 3,
-        xpPerCompletion: 15,
-        bonusXpForFullWeek: 0,
-      },
-      completions: 2,
-    },
-    {
-      habit: {
-        id: 'morning-routine',
-        title: 'Morning Routine',
-        description: 'Build consistency before the day starts.',
-        type: HabitType.POSITIVE,
-        attribute: HabitAttribute.CONSTITUTION,
-        targetPerWeek: 4,
-        xpPerCompletion: 20,
-        bonusXpForFullWeek: 35,
-      },
-      completions: 4,
-    },
-    {
-      habit: {
-        id: 'organization',
-        title: 'Tidy Workspace',
-        description: 'Reset the desk and keep tasks visible.',
-        type: HabitType.POSITIVE,
-        attribute: HabitAttribute.DEXTERITY,
-        targetPerWeek: 3,
-        xpPerCompletion: 18,
-        bonusXpForFullWeek: 30,
-      },
-      completions: 2,
-    },
-    {
-      habit: {
-        id: 'sleep-log',
-        title: 'Sleep Tracking',
-        description: 'Review sleep and recovery patterns nightly.',
-        type: HabitType.POSITIVE,
-        attribute: HabitAttribute.CHARISMA,
-        targetPerWeek: 5,
-        xpPerCompletion: 12,
-        bonusXpForFullWeek: 20,
-      },
-      completions: 3,
-    },
-  ];
-
   habits: HabitProgress[] = [];
+  archivedHabits: HabitProgress[] = [];
 
   get totalXp(): number {
-    return this.habits.reduce((sum, entry) => {
-      const result = this.habitRules.calculateWeeklyResult(
-        entry.habit,
-        entry.completions,
-      );
-      return sum + result.totalXp;
-    }, 0);
+    if (!this.isDataReady) {
+      return 0;
+    }
+
+    const total = [...this.habits, ...this.archivedHabits].reduce(
+      (sum, entry) => {
+        const result = this.habitRules.calculateWeeklyResult(
+          entry.habit,
+          entry.completions,
+        );
+        return sum + result.totalXp;
+      },
+      0,
+    );
+
+    return Math.max(0, total);
   }
 
   get playerLevel(): number {
     return this.habitRules.calculatePlayerLevel(this.totalXp);
   }
 
+  get currentLevelXp(): number {
+    let xpIntoCurrentLevel = this.totalXp;
+    let level = 1;
+
+    while (xpIntoCurrentLevel >= this.habitRules.xpRequiredForLevel(level)) {
+      xpIntoCurrentLevel -= this.habitRules.xpRequiredForLevel(level);
+      level += 1;
+    }
+
+    return xpIntoCurrentLevel;
+  }
+
+  get xpToNextLevel(): number {
+    const currentLevel = this.playerLevel;
+    return this.habitRules.xpRequiredForLevel(currentLevel);
+  }
+
+  get xpProgressTowardNextLevel(): number {
+    const currentLevelXp = this.currentLevelXp;
+    const nextLevelXp = this.xpToNextLevel;
+    if (nextLevelXp <= 0) {
+      return 0;
+    }
+
+    return Math.min(currentLevelXp / nextLevelXp, 1);
+  }
+
   get playerStats(): PlayerStats {
-    return this.habitRules.calculateAggregatedStats(this.habits);
+    if (!this.isDataReady) {
+      return this.habitRules.createDefaultStats();
+    }
+
+    return this.habitRules.calculateAggregatedStats([
+      ...this.habits,
+      ...this.archivedHabits,
+    ]);
   }
 
   get playerClass(): string {
@@ -161,13 +140,37 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private showLevelUpToastIfNeeded(previousLevel: number): void {
+    const currentLevel = this.playerLevel;
+
+    if (currentLevel > previousLevel) {
+      this.levelUpToast = `Level Up! ${this.userName} reached level ${currentLevel}!`;
+      this.snackBar.open(this.levelUpToast, 'Dismiss', {
+        duration: 3200,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['level-up-snackbar'],
+      });
+
+      if (this.levelUpTimeoutId) {
+        window.clearTimeout(this.levelUpTimeoutId);
+      }
+
+      this.levelUpTimeoutId = window.setTimeout(() => {
+        this.levelUpToast = '';
+      }, 3200);
+    }
+
+    this.lastLevel = currentLevel;
+  }
+
   constructor(
     public readonly habitRules: HabitRulesService,
     private readonly supabase: SupabaseService,
     private readonly router: Router,
-  ) {
-    this.habits = this.demoHabits.map((entry) => ({ ...entry }));
-  }
+    private readonly snackBar: MatSnackBar,
+    private readonly dialog: MatDialog,
+  ) {}
 
   get userInitials(): string {
     if (!this.userName || this.userName === 'Hero') {
@@ -209,15 +212,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { data } = await this.supabase.getClient().auth.getSession();
-    this.isAuthenticated = Boolean(data.session);
+    const { data } = await this.supabase.getSession();
+    const session = data.session;
+    this.isAuthenticated = Boolean(session);
 
     if (!this.isAuthenticated) {
       await this.router.navigateByUrl('/login');
       return;
     }
 
-    this.applyUserName(data.session);
+    this.applyUserName(session);
 
     this.authSubscription = this.supabase
       .getClient()
@@ -229,7 +233,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           await this.loadUserHabits();
         } else {
           this.userName = 'Hero';
-          this.habits = this.demoHabits.map((entry) => ({ ...entry }));
+          this.habits = [];
           await this.router.navigateByUrl('/login');
         }
       }).data.subscription;
@@ -247,13 +251,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private async loadUserHabits(): Promise<void> {
     if (!this.isConfigured || !this.isAuthenticated) {
-      this.habits = this.demoHabits.map((entry) => ({ ...entry }));
+      this.isDataReady = false;
+      this.habits = [];
+      this.archivedHabits = [];
       return;
     }
 
-    const { data, error } = await this.supabase.getHabits();
+    const { data, error } = await this.supabase.getHabits(true);
     if (error || !data?.length) {
-      this.habits = this.demoHabits.map((entry) => ({ ...entry }));
+      this.habits = [];
+      this.archivedHabits = [];
+      this.isDataReady = true;
       return;
     }
 
@@ -272,13 +280,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return {
           habit: this.mapHabitRecord(record),
           completions,
+          isActive: record.is_active !== false,
         };
       }),
     );
 
-    this.habits = loaded.length
-      ? loaded
-      : this.demoHabits.map((entry) => ({ ...entry }));
+    this.habits = loaded.filter((entry) => entry.isActive);
+    this.archivedHabits = loaded.filter((entry) => !entry.isActive);
+    this.isDataReady = true;
   }
 
   async createHabit(payload: HabitFormValues): Promise<void> {
@@ -315,6 +324,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     const currentCompletions = targetHabit.completions;
+    const previousLevel = this.playerLevel;
     const currentTotal = this.habitRules.calculateWeeklyResult(
       targetHabit.habit,
       currentCompletions,
@@ -331,6 +341,40 @@ export class DashboardComponent implements OnInit, OnDestroy {
       notes: 'Logged from dashboard',
     });
 
+    await this.loadUserHabits();
+    this.showLevelUpToastIfNeeded(previousLevel);
+  }
+
+  confirmDeleteHabit(habitId: string, habitTitle: string): void {
+    const dialogRef = this.dialog.open(HabitDeleteDialogComponent, {
+      width: '420px',
+      disableClose: true,
+      data: { habitTitle },
+      panelClass: 'habit-delete-dialog',
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        void this.deleteHabit(habitId);
+      }
+    });
+  }
+
+  async deleteHabit(habitId: string): Promise<void> {
+    if (!this.isAuthenticated) {
+      this.errorMessage = 'Please sign in before deleting a habit.';
+      return;
+    }
+
+    const { error } = await this.supabase.deleteHabit(habitId);
+    if (error) {
+      this.errorMessage = error.message;
+      return;
+    }
+
+    this.errorMessage = '';
+    this.habits = this.habits.filter((entry) => entry.habit.id !== habitId);
+    this.isDataReady = false;
     await this.loadUserHabits();
   }
 
@@ -358,5 +402,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.authSubscription?.unsubscribe();
+    if (this.levelUpTimeoutId) {
+      window.clearTimeout(this.levelUpTimeoutId);
+    }
   }
 }

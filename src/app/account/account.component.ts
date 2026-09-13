@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { SupabaseService } from '../core/supabase.service';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, MatButtonModule],
   templateUrl: './account.component.html',
   styleUrl: './account.component.css',
 })
@@ -26,24 +27,21 @@ export class AccountComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.supabase
-      .getClient()
-      .auth.getSession()
-      .then(({ data }) => {
-        const session = data.session;
-        this.isAuthenticated = Boolean(session);
+    this.supabase.getSession().then(({ data }) => {
+      const session = data.session;
+      this.isAuthenticated = Boolean(session);
 
-        if (!this.isAuthenticated) {
-          this.router.navigateByUrl('/login');
-          return;
-        }
+      if (!this.isAuthenticated) {
+        this.router.navigateByUrl('/login');
+        return;
+      }
 
-        this.userName =
-          session?.user?.user_metadata?.['full_name'] ||
-          session?.user?.email?.split('@')[0] ||
-          'Hero';
-        this.form.email = session?.user?.email ?? '';
-      });
+      this.userName =
+        session?.user?.user_metadata?.['full_name'] ||
+        session?.user?.email?.split('@')[0] ||
+        'Hero';
+      this.form.email = session?.user?.email ?? '';
+    });
   }
 
   get userInitials(): string {
@@ -70,6 +68,17 @@ export class AccountComponent implements OnInit {
     this.loading = true;
 
     try {
+      if (this.supabase.isLocalDevelopmentMode()) {
+        this.supabase.setStoredDevSession(
+          this.form.email,
+          this.userName !== 'Hero' ? this.userName : undefined,
+        );
+        this.accountActionMessage =
+          'Development reset flow started. Set a new password on the next screen.';
+        await this.router.navigateByUrl('/auth/reset-password');
+        return;
+      }
+
       const { error } = await this.supabase.resetPasswordForEmail(
         this.form.email,
       );

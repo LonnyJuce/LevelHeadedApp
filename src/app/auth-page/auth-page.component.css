@@ -50,15 +50,6 @@ h1 {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.auth-toggle button,
-.primary-button {
-  border: none;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 .auth-toggle button {
   background: transparent;
   color: #cbd5e1;
@@ -67,6 +58,13 @@ h1 {
 .auth-toggle button.active {
   background: linear-gradient(135deg, #8b5cf6, #ec4899);
   color: white;
+}
+
+button[mat-flat-button],
+button[mat-stroked-button],
+button[mat-button] {
+  border-radius: 10px;
+  font-weight: 700;
 }
 
 .auth-form {
@@ -97,16 +95,6 @@ h1 {
   border-radius: 10px;
   padding: 12px 14px;
   color: white;
-}
-
-.primary-button {
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
-  color: white;
-}
-
-.primary-button:disabled {
-  opacity: 0.7;
-  cursor: wait;
 }
 
 .error-message {

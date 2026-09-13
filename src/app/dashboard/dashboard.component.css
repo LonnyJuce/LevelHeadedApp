@@ -63,20 +63,15 @@ h1 {
   font-size: 1.3rem;
 }
 
-.ghost-button,
-.primary-button,
-.section-heading button {
-  border: none;
+button[mat-stroked-button],
+button[mat-flat-button],
+a[mat-stroked-button] {
   border-radius: 10px;
-  padding: 10px 14px;
   font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
 }
 
-.ghost-button {
-  background: rgba(148, 163, 184, 0.12);
-  color: white;
+.topbar-actions .mat-mdc-stroked-button {
+  color: var(--app-text) !important;
 }
 
 .summary-grid {
@@ -114,7 +109,8 @@ h1 {
 
 .xp-row,
 .habit-meta,
-.stat-header {
+.stat-header,
+.xp-summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -124,6 +120,12 @@ h1 {
 .xp-row {
   margin-bottom: 12px;
   color: #dbeafe;
+}
+
+.xp-summary-row {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
 }
 
 .progress-bar,
@@ -239,7 +241,15 @@ h1 {
 }
 
 .habit-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-top: 14px;
+}
+
+.habit-actions > button {
+  flex: 1 1 150px;
 }
 
 .primary-button {
@@ -251,6 +261,16 @@ h1 {
   margin: 0 0 16px;
   color: #fca5a5;
   font-size: 0.86rem;
+}
+
+.level-up-snackbar {
+  margin-top: 72px;
+  max-width: min(90vw, 420px);
+}
+
+.cdk-overlay-pane:has(.level-up-snackbar) {
+  display: flex;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

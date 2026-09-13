@@ -4,27 +4,14 @@
 
 .account-shell {
   max-width: 720px;
-  margin: 32px auto 0;
-  padding: 0 20px 48px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
 }
 
 .account-nav {
   display: flex;
   justify-content: flex-start;
   margin-bottom: 16px;
-}
-
-.ghost-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-weight: 700;
-  text-decoration: none;
-  background: rgba(148, 163, 184, 0.12);
-  color: white;
 }
 
 .account-panel {
@@ -94,23 +81,11 @@
   color: white;
 }
 
-.primary-button,
-.danger-button {
-  border: none;
+button[mat-flat-button],
+button[mat-stroked-button],
+a[mat-stroked-button] {
   border-radius: 10px;
-  padding: 10px 14px;
   font-weight: 700;
-  cursor: pointer;
-}
-
-.primary-button {
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
-  color: white;
-}
-
-.danger-button {
-  background: rgba(239, 68, 68, 0.14);
-  color: #fca5a5;
 }
 
 .account-message {
