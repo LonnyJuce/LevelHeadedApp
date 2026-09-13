@@ -36,20 +36,51 @@
       </article>
 
       <article class="panel stat-panel">
-        <p class="label">Character Sheet</p>
-        <div class="stat-list">
-          @for (stat of statSummaries; track stat.name) {
-            <div class="stat-item">
-              <div class="stat-header">
-                <span>{{ stat.name }}</span>
-                <strong>{{ stat.total }}</strong>
-              </div>
-              <div class="mini-bar">
-                <span [style.width.%]="stat.progress * 100"></span>
-              </div>
-            </div>
-          }
+        <div class="stat-panel-header">
+          <p class="label">Character Sheet</p>
+          <div class="stat-view-toggle" aria-label="Stat view toggle">
+            <button
+              type="button"
+              [class.active]="statView === 'bars'"
+              (click)="statView = 'bars'"
+            >
+              Bars
+            </button>
+            <button
+              type="button"
+              [class.active]="statView === 'hex'"
+              (click)="statView = 'hex'"
+            >
+              Hex
+            </button>
+          </div>
         </div>
+
+        @if (statView === "bars") {
+          <div class="stat-list">
+            @for (stat of statSummaries; track stat.name) {
+              <div class="stat-item">
+                <div class="stat-header">
+                  <span>{{ stat.name }}</span>
+                  <strong>{{ stat.total }}</strong>
+                </div>
+                <div class="mini-bar">
+                  <span [style.width.%]="stat.progress * 100"></span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="hex-chart-wrap">
+            <canvas
+              baseChart
+              [data]="radarChartData"
+              [options]="radarChartOptions"
+              [type]="'radar'"
+              aria-label="Stat radar chart"
+            ></canvas>
+          </div>
+        }
       </article>
     </section>
 
@@ -78,7 +109,9 @@
             @for (entry of group.entries; track entry.habit.id) {
               <article
                 class="habit-card"
-                [class.pending-quest]="entry.completions < entry.habit.targetPerWeek"
+                [class.pending-quest]="
+                  entry.completions < entry.habit.targetPerWeek
+                "
               >
                 <div class="habit-head">
                   <div>
@@ -94,8 +127,8 @@
                     >
                       {{
                         entry.completions >= entry.habit.targetPerWeek
-                          ? 'Cleared'
-                          : 'Pending'
+                          ? "Cleared"
+                          : "Pending"
                       }}
                     </span>
                     <span
@@ -159,7 +192,9 @@
                     mat-stroked-button
                     type="button"
                     color="warn"
-                    (click)="confirmDeleteHabit(entry.habit.id, entry.habit.title)"
+                    (click)="
+                      confirmDeleteHabit(entry.habit.id, entry.habit.title)
+                    "
                     aria-label="Delete habit {{ entry.habit.title }}"
                   >
                     Delete

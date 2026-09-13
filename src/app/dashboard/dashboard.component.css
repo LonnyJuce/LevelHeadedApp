@@ -102,6 +102,42 @@ a[mat-stroked-button] {
   color: #c4b5fd;
 }
 
+.stat-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-view-toggle {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.stat-view-toggle button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #cbd5e1;
+  padding: 7px 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.stat-view-toggle button.active {
+  background: linear-gradient(135deg, #8b5cf6, #38bdf8);
+  color: white;
+}
+
 .hero-panel h2 {
   margin: 0 0 20px;
   font-size: clamp(1.5rem, 3vw, 2.2rem);
@@ -148,6 +184,19 @@ a[mat-stroked-button] {
 .stat-list {
   display: grid;
   gap: 14px;
+}
+
+.hex-chart-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  height: 300px;
+}
+
+.hex-chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .stat-header {

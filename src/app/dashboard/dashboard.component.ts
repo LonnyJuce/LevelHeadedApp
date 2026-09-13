@@ -5,6 +5,8 @@ import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import type { ChartConfiguration } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
 import {
   HabitAttribute,
   HabitDefinition,
@@ -32,6 +34,17 @@ interface HabitQuestGroup {
   entries: HabitProgress[];
 }
 
+interface HexStatPoint {
+  label: string;
+  value: number;
+  x: number;
+  y: number;
+  labelX: number;
+  labelY: number;
+  valueX: number;
+  valueY: number;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -42,6 +55,7 @@ interface HabitQuestGroup {
     MatButtonModule,
     MatDialogModule,
     MatSnackBarModule,
+    BaseChartDirective,
     TitleCasePipe,
   ],
   templateUrl: './dashboard.component.html',
@@ -65,6 +79,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly HabitType = HabitType;
   readonly HabitAttribute = HabitAttribute;
   readonly stats = Object.values(HabitAttribute);
+  statView: 'bars' | 'hex' = 'bars';
 
   habits: HabitProgress[] = [];
   archivedHabits: HabitProgress[] = [];
@@ -138,7 +153,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   get habitGroups(): HabitQuestGroup[] {
-    const groups: Array<{ label: string; key: HabitResetPeriod; entries: HabitProgress[] }> = [
+    const groups: Array<{
+      label: string;
+      key: HabitResetPeriod;
+      entries: HabitProgress[];
+    }> = [
       {
         label: 'Daily Quests',
         key: HabitResetPeriod.DAILY,
@@ -202,6 +221,119 @@ export class DashboardComponent implements OnInit, OnDestroy {
         progress: Math.min(Math.abs(total) / 25, 1),
       };
     });
+  }
+
+  get radarChartData() {
+    const values = this.stats.map((stat) =>
+      Math.max(0, this.playerStats[stat] ?? 0),
+    );
+
+    return {
+      labels: this.stats,
+      datasets: [
+        {
+          label: 'Base stats',
+          data: values,
+          borderColor: '#8b5cf6',
+          borderWidth: 2,
+          backgroundColor: 'rgba(96, 165, 250, 0.2)',
+          pointBackgroundColor: '#f8fafc',
+          pointBorderColor: '#8b5cf6',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 6,
+        },
+      ],
+    };
+  }
+
+  get radarChartOptions(): ChartConfiguration<'radar'>['options'] {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          enabled: true,
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          titleColor: '#f8fafc',
+          bodyColor: '#f8fafc',
+          borderColor: 'rgba(148, 163, 184, 0.5)',
+          borderWidth: 1,
+        },
+      },
+      scales: {
+        r: {
+          min: 0,
+          max: 120,
+          ticks: {
+            display: false,
+            stepSize: 20,
+          },
+          pointLabels: {
+            color: '#e2e8f0',
+            font: {
+              size: 12,
+              weight: 'bold',
+            },
+          },
+          grid: {
+            color: 'rgba(148, 163, 184, 0.2)',
+          },
+          angleLines: {
+            color: 'rgba(148, 163, 184, 0.2)',
+          },
+        },
+      },
+    };
+  }
+
+  get hexStatPoints(): HexStatPoint[] {
+    const entries = this.stats.map((stat) => ({
+      label: stat,
+      value: this.playerStats[stat] ?? 0,
+    }));
+
+    const maxValue = Math.max(
+      1,
+      ...entries.map((entry) => Math.abs(entry.value)),
+    );
+    const cx = 150;
+    const cy = 150;
+    const radius = 98;
+
+    return entries.map((entry, index) => {
+      const angle = -Math.PI / 2 + (index / entries.length) * Math.PI * 2;
+      const normalized = Math.min(
+        Math.max(Math.abs(entry.value) / maxValue, 0.12),
+        1,
+      );
+      const pointRadius = radius * normalized;
+      const x = cx + Math.cos(angle) * pointRadius;
+      const y = cy + Math.sin(angle) * pointRadius;
+      const labelRadius = radius + 26;
+      const labelX = cx + Math.cos(angle) * labelRadius;
+      const labelY = cy + Math.sin(angle) * labelRadius;
+      const valueX = cx + Math.cos(angle) * (pointRadius + 18);
+      const valueY = cy + Math.sin(angle) * (pointRadius + 18);
+
+      return {
+        label: entry.label,
+        value: entry.value,
+        x,
+        y,
+        labelX,
+        labelY,
+        valueX,
+        valueY,
+      };
+    });
+  }
+
+  get hexPolygonPoints(): string {
+    return this.hexStatPoints.map((point) => `${point.x},${point.y}`).join(' ');
   }
 
   private showLevelUpToastIfNeeded(previousLevel: number): void {

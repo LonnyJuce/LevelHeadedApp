@@ -63,6 +63,13 @@ describe('DashboardComponent', () => {
     (component as any).dialog = dialog;
   });
 
+  it('exposes a six-point radar chart for the current stats', () => {
+    expect(component.hexStatPoints.length).toBe(6);
+    expect(
+      component.hexStatPoints.every((point) => point.value >= 0),
+    ).toBeTrue();
+  });
+
   it('starts empty when the user has no saved habits yet', async () => {
     await (component as any).loadUserHabits();
 
