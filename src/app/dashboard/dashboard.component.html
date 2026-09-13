@@ -56,87 +56,120 @@
     <section class="quest-panel panel">
       <div class="section-heading">
         <h3>Active Quests</h3>
-        <button
-          mat-flat-button
-          type="button"
-          (click)="showHabitForm = !showHabitForm"
-        >
-          {{ showHabitForm ? "Close" : "+ New Habit" }}
+        <button mat-flat-button type="button" (click)="openNewHabitDialog()">
+          + New Habit
         </button>
       </div>
-
-      @if (showHabitForm) {
-        <app-habit-form (habitSubmitted)="createHabit($event)"></app-habit-form>
-      }
 
       @if (errorMessage) {
         <p class="error-message">{{ errorMessage }}</p>
       }
 
-      <div class="habit-grid">
-        @for (entry of habits; track entry.habit.id) {
-          <article class="habit-card">
-            <div class="habit-head">
-              <div>
-                <p class="attribute-badge">{{ entry.habit.attribute }}</p>
-                <h4>{{ entry.habit.title }}</h4>
-              </div>
-              <span
-                class="habit-type"
-                [class.negative]="entry.habit.type === 'negative'"
+      @for (group of habitGroups; track group.label) {
+        <div class="quest-group" aria-label="{{ group.label }}">
+          <div class="quest-group-header">
+            <h4>{{ group.label }}</h4>
+            <span class="quest-group-meta">
+              {{ group.pendingCount }} pending
+            </span>
+          </div>
+
+          <div class="habit-grid">
+            @for (entry of group.entries; track entry.habit.id) {
+              <article
+                class="habit-card"
+                [class.pending-quest]="entry.completions < entry.habit.targetPerWeek"
               >
-                {{ entry.habit.type }}
-              </span>
-            </div>
+                <div class="habit-head">
+                  <div>
+                    <p class="attribute-badge">{{ entry.habit.attribute }}</p>
+                    <h4>{{ entry.habit.title }}</h4>
+                  </div>
+                  <div class="habit-badges">
+                    <span
+                      class="habit-status"
+                      [class.is-complete]="
+                        entry.completions >= entry.habit.targetPerWeek
+                      "
+                    >
+                      {{
+                        entry.completions >= entry.habit.targetPerWeek
+                          ? 'Cleared'
+                          : 'Pending'
+                      }}
+                    </span>
+                    <span
+                      class="habit-type"
+                      [class.negative]="entry.habit.type === 'negative'"
+                    >
+                      {{ entry.habit.type }}
+                    </span>
+                    <span class="difficulty-badge">
+                      {{ entry.habit.difficulty | titlecase }}
+                    </span>
+                  </div>
+                </div>
 
-            <p class="habit-desc">{{ entry.habit.description }}</p>
+                <p class="habit-desc">{{ entry.habit.description }}</p>
 
-            <div class="habit-meta">
-              <span>
-                {{ entry.completions }}/{{ entry.habit.targetPerWeek }} this
-                week
-              </span>
-              <strong>
-                {{
-                  habitRules.calculateWeeklyResult(
-                    entry.habit,
-                    entry.completions
-                  ).totalXp
-                }}
-                XP
-              </strong>
-            </div>
+                <div class="habit-meta">
+                  <span>
+                    {{ entry.completions }}/{{ entry.habit.targetPerWeek }} this
+                    {{ entry.habit.resetPeriod }}
+                  </span>
+                  <strong>
+                    {{
+                      habitRules.calculateWeeklyResult(
+                        entry.habit,
+                        entry.completions
+                      ).totalXp
+                    }}
+                    XP
+                  </strong>
+                </div>
 
-            <div class="mini-bar">
-              <span
-                [style.width.%]="
-                  percentOf(entry.completions, entry.habit.targetPerWeek)
-                "
-              ></span>
-            </div>
+                <div class="mini-bar">
+                  <span
+                    [style.width.%]="
+                      percentOf(entry.completions, entry.habit.targetPerWeek)
+                    "
+                  ></span>
+                </div>
 
-            <div class="habit-actions">
-              <button
-                mat-flat-button
-                type="button"
-                color="primary"
-                (click)="completeHabit(entry.habit.id)"
-              >
-                Mark complete
-              </button>
-              <button
-                mat-stroked-button
-                type="button"
-                color="warn"
-                (click)="confirmDeleteHabit(entry.habit.id, entry.habit.title)"
-                aria-label="Delete habit {{ entry.habit.title }}"
-              >
-                Delete
-              </button>
-            </div>
-          </article>
-        }
-      </div>
+                <div class="habit-actions">
+                  <button
+                    mat-flat-button
+                    type="button"
+                    color="primary"
+                    (click)="completeHabit(entry.habit.id)"
+                  >
+                    Mark complete
+                  </button>
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    color="accent"
+                    [disabled]="entry.completions <= 0"
+                    (click)="undoHabitCompletion(entry.habit.id)"
+                    aria-label="Undo completion for {{ entry.habit.title }}"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    color="warn"
+                    (click)="confirmDeleteHabit(entry.habit.id, entry.habit.title)"
+                    aria-label="Delete habit {{ entry.habit.title }}"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        </div>
+      }
     </section>
   } @else {
     <section class="panel loading-panel" aria-live="polite">

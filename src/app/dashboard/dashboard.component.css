@@ -179,6 +179,39 @@ a[mat-stroked-button] {
   color: white;
 }
 
+.quest-group {
+  display: grid;
+  gap: 16px;
+}
+
+.quest-group + .quest-group {
+  margin-top: 20px;
+}
+
+.quest-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.quest-group-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+}
+
+.quest-group-meta {
+  color: #fbbf24;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .habit-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -192,12 +225,24 @@ a[mat-stroked-button] {
   padding: 16px;
 }
 
+.habit-card.pending-quest {
+  border-color: rgba(251, 191, 36, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.12);
+}
+
 .habit-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.habit-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .habit-head h4 {
@@ -213,12 +258,17 @@ a[mat-stroked-button] {
   color: #93c5fd;
 }
 
-.habit-type {
+.habit-type,
+.difficulty-badge,
+.habit-status {
   padding: 6px 9px;
   border-radius: 999px;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.habit-type {
   background: rgba(34, 197, 94, 0.12);
   color: #86efac;
 }
@@ -226,6 +276,21 @@ a[mat-stroked-button] {
 .habit-type.negative {
   background: rgba(239, 68, 68, 0.12);
   color: #fca5a5;
+}
+
+.habit-status {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fcd34d;
+}
+
+.habit-status.is-complete {
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+
+.difficulty-badge {
+  background: rgba(96, 165, 250, 0.12);
+  color: #bfdbfe;
 }
 
 .habit-desc {

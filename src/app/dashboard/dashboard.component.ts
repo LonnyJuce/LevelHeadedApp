@@ -1,3 +1,4 @@
+import { TitleCasePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -7,6 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   HabitAttribute,
   HabitDefinition,
+  HabitResetPeriod,
   HabitRulesService,
   HabitType,
   PlayerStats,
@@ -24,6 +26,12 @@ interface HabitProgress {
   isActive: boolean;
 }
 
+interface HabitQuestGroup {
+  label: string;
+  pendingCount: number;
+  entries: HabitProgress[];
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -34,6 +42,7 @@ interface HabitProgress {
     MatButtonModule,
     MatDialogModule,
     MatSnackBarModule,
+    TitleCasePipe,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
@@ -47,7 +56,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   loading = false;
   isDataReady = false;
   errorMessage = '';
-  showHabitForm = false;
   userName = 'Hero';
   levelUpToast = '';
   private authSubscription?: { unsubscribe: () => void };
@@ -129,6 +137,62 @@ export class DashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  get habitGroups(): HabitQuestGroup[] {
+    const groups: Array<{ label: string; key: HabitResetPeriod; entries: HabitProgress[] }> = [
+      {
+        label: 'Daily Quests',
+        key: HabitResetPeriod.DAILY,
+        entries: this.habits.filter(
+          (entry) => entry.habit.resetPeriod === HabitResetPeriod.DAILY,
+        ),
+      },
+      {
+        label: 'Weekly Quests',
+        key: HabitResetPeriod.WEEKLY,
+        entries: this.habits.filter(
+          (entry) => entry.habit.resetPeriod === HabitResetPeriod.WEEKLY,
+        ),
+      },
+    ];
+
+    const difficultyOrder: Record<string, number> = {
+      easy: 1,
+      medium: 2,
+      hard: 3,
+    };
+
+    return groups
+      .filter((group) => group.entries.length > 0)
+      .map((group) => {
+        const entries = [...group.entries].sort((left, right) => {
+          const leftComplete = left.completions >= left.habit.targetPerWeek;
+          const rightComplete = right.completions >= right.habit.targetPerWeek;
+
+          if (leftComplete !== rightComplete) {
+            return Number(leftComplete) - Number(rightComplete);
+          }
+
+          const difficultyDelta =
+            (difficultyOrder[right.habit.difficulty] ?? 0) -
+            (difficultyOrder[left.habit.difficulty] ?? 0);
+
+          if (difficultyDelta !== 0) {
+            return difficultyDelta;
+          }
+
+          return left.habit.title.localeCompare(right.habit.title);
+        });
+
+        return {
+          label: group.label,
+          pendingCount: entries.filter(
+            (entry) => entry.completions < entry.habit.targetPerWeek,
+          ).length,
+          entries,
+        };
+      });
+  }
+
   get statSummaries() {
     return this.stats.map((stat) => {
       const total = this.playerStats[stat];
@@ -188,6 +252,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   mapHabitRecord(record: Partial<HabitRecord>): HabitDefinition {
+    const resetPeriodValue =
+      record.reset_period === HabitResetPeriod.DAILY
+        ? HabitResetPeriod.DAILY
+        : HabitResetPeriod.WEEKLY;
+
+    const difficultyValue =
+      record.difficulty === 'easy'
+        ? 'easy'
+        : record.difficulty === 'hard'
+          ? 'hard'
+          : 'medium';
+
     return {
       id: record.id ?? 'habit-placeholder',
       title: record.title ?? 'Untitled habit',
@@ -201,6 +277,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       targetPerWeek: Number(record.target_per_week ?? 1),
       xpPerCompletion: Number(record.xp_per_completion ?? 10),
       bonusXpForFullWeek: Number(record.bonus_xp_for_full_week ?? 0),
+      resetPeriod: resetPeriodValue,
+      difficulty: difficultyValue as any,
     };
   }
 
@@ -267,18 +345,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const loaded = await Promise.all(
       data.map(async (record) => {
+        const habit = this.mapHabitRecord(record);
         const completionResponse = await this.supabase.getCompletionHistory(
           record.id,
         );
         const completions = completionResponse.error
           ? 0
-          : completionResponse.data.reduce(
-              (sum, item) => sum + Number(item.quantity ?? 0),
-              0,
+          : this.habitRules.countCompletionsInCurrentResetWindow(
+              completionResponse.data ?? [],
+              habit.resetPeriod,
             );
 
         return {
-          habit: this.mapHabitRecord(record),
+          habit,
           completions,
           isActive: record.is_active !== false,
         };
@@ -290,11 +369,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.isDataReady = true;
   }
 
+  openNewHabitDialog(): void {
+    const dialogRef = this.dialog.open(HabitFormComponent, {
+      width: '640px',
+      maxWidth: '90vw',
+      panelClass: 'habit-form-dialog',
+      disableClose: true,
+    });
+
+    const formComponent = dialogRef.componentInstance as HabitFormComponent;
+    formComponent.habitSubmitted.subscribe(async (payload: HabitFormValues) => {
+      await this.createHabit(payload);
+      dialogRef.close();
+    });
+  }
+
   async createHabit(payload: HabitFormValues): Promise<void> {
     if (!this.isAuthenticated) {
       this.errorMessage = 'Please sign in before creating a habit.';
       return;
     }
+
+    const difficultyConfig = this.habitRules.getDifficultyConfig(
+      payload.difficulty,
+    );
 
     const { error } = await this.supabase.upsertHabit({
       title: payload.title.trim(),
@@ -302,8 +400,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       habit_type: payload.type,
       attribute: payload.attribute,
       target_per_week: payload.targetPerWeek,
-      xp_per_completion: payload.xpPerCompletion,
-      bonus_xp_for_full_week: payload.bonusXpForFullWeek,
+      xp_per_completion: difficultyConfig.xpPerCompletion,
+      bonus_xp_for_full_week: difficultyConfig.bonusXpForFullWeek,
+      reset_period: payload.resetPeriod,
+      difficulty: payload.difficulty,
       is_active: true,
     });
 
@@ -313,13 +413,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     this.errorMessage = '';
-    this.showHabitForm = false;
     await this.loadUserHabits();
   }
 
   async completeHabit(habitId: string, quantity = 1): Promise<void> {
     const targetHabit = this.habits.find((entry) => entry.habit.id === habitId);
     if (!targetHabit) {
+      return;
+    }
+
+    const delta = Number(quantity) || 0;
+    if (!Number.isFinite(delta) || delta <= 0) {
       return;
     }
 
@@ -331,16 +435,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ).totalXp;
     const updatedTotal = this.habitRules.calculateWeeklyResult(
       targetHabit.habit,
-      currentCompletions + quantity,
+      currentCompletions + delta,
     ).totalXp;
 
     await this.supabase.logCompletion({
       habit_id: habitId,
-      quantity,
+      quantity: delta,
       xp_delta: updatedTotal - currentTotal,
       notes: 'Logged from dashboard',
     });
 
+    await this.loadUserHabits();
+    this.showLevelUpToastIfNeeded(previousLevel);
+  }
+
+  async undoHabitCompletion(habitId: string): Promise<void> {
+    const targetHabit = this.habits.find((entry) => entry.habit.id === habitId);
+    if (!targetHabit || targetHabit.completions <= 0) {
+      return;
+    }
+
+    const { data, error } = await this.supabase.getCompletionHistory(habitId);
+    if (error || !data?.length) {
+      return;
+    }
+
+    const latestCompletion = [...data]
+      .sort(
+        (left, right) =>
+          new Date(right.completed_at ?? 0).getTime() -
+          new Date(left.completed_at ?? 0).getTime(),
+      )
+      .find((entry) => entry.id);
+
+    if (!latestCompletion?.id) {
+      return;
+    }
+
+    const previousLevel = this.playerLevel;
+    await this.supabase.deleteCompletion(latestCompletion.id);
     await this.loadUserHabits();
     this.showLevelUpToastIfNeeded(previousLevel);
   }

@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import {
   HabitAttribute,
+  HabitDifficulty,
+  HabitResetPeriod,
   HabitType,
   HabitRulesService,
   HabitDefinition,
@@ -26,6 +28,8 @@ describe('HabitRulesService', () => {
       targetPerWeek: 5,
       xpPerCompletion: 25,
       bonusXpForFullWeek: 50,
+      resetPeriod: HabitResetPeriod.WEEKLY,
+      difficulty: HabitDifficulty.MEDIUM,
     };
 
     const result = service.calculateWeeklyResult(habit, 5);
@@ -46,6 +50,8 @@ describe('HabitRulesService', () => {
       targetPerWeek: 3,
       xpPerCompletion: 15,
       bonusXpForFullWeek: 0,
+      resetPeriod: HabitResetPeriod.WEEKLY,
+      difficulty: HabitDifficulty.MEDIUM,
     };
 
     const result = service.calculateWeeklyResult(habit, 2);
@@ -54,6 +60,56 @@ describe('HabitRulesService', () => {
     expect(result.bonusXp).toBe(0);
     expect(result.totalXp).toBe(-30);
     expect(result.completedTarget).toBeFalse();
+  });
+
+  it('counts only the current day for daily habits', () => {
+    const now = new Date('2026-09-12T15:00:00Z');
+    const completions = [
+      { completed_at: '2026-09-11T20:00:00Z', quantity: 1 },
+      { completed_at: '2026-09-12T09:00:00Z', quantity: 2 },
+      { completed_at: '2026-09-12T14:30:00Z', quantity: 1 },
+    ];
+
+    expect(
+      service.countCompletionsInCurrentResetWindow(
+        completions as any,
+        HabitResetPeriod.DAILY,
+        now,
+      ),
+    ).toBe(3);
+  });
+
+  it('counts only the current week for weekly habits', () => {
+    const now = new Date('2026-09-12T15:00:00Z');
+    const completions = [
+      { completed_at: '2026-09-06T10:00:00Z', quantity: 1 },
+      { completed_at: '2026-09-10T07:00:00Z', quantity: 1 },
+      { completed_at: '2026-09-12T09:00:00Z', quantity: 2 },
+      { completed_at: '2026-09-13T02:00:00Z', quantity: 1 },
+    ];
+
+    expect(
+      service.countCompletionsInCurrentResetWindow(
+        completions as any,
+        HabitResetPeriod.WEEKLY,
+        now,
+      ),
+    ).toBe(4);
+  });
+
+  it('maps each difficulty to preset XP values', () => {
+    expect(service.getDifficultyConfig(HabitDifficulty.EASY)).toEqual({
+      xpPerCompletion: 10,
+      bonusXpForFullWeek: 25,
+    });
+    expect(service.getDifficultyConfig(HabitDifficulty.MEDIUM)).toEqual({
+      xpPerCompletion: 20,
+      bonusXpForFullWeek: 50,
+    });
+    expect(service.getDifficultyConfig(HabitDifficulty.HARD)).toEqual({
+      xpPerCompletion: 35,
+      bonusXpForFullWeek: 100,
+    });
   });
 
   it('requires increasingly more XP to reach higher levels', () => {

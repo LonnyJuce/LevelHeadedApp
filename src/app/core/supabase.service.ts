@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+import { HabitDifficulty, HabitResetPeriod } from '../habit-rules.service';
 import { environment } from '../../environments/environment';
 
 export type HabitAttribute =
@@ -23,6 +24,8 @@ export interface HabitRecord {
   target_per_week: number;
   xp_per_completion: number;
   bonus_xp_for_full_week: number;
+  reset_period?: HabitResetPeriod;
+  difficulty?: HabitDifficulty;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -351,6 +354,8 @@ export class SupabaseService {
         user_id: userId,
         created_at: habit.created_at ?? new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        reset_period: habit.reset_period ?? HabitResetPeriod.WEEKLY,
+        difficulty: habit.difficulty ?? HabitDifficulty.MEDIUM,
         is_active: habit.is_active ?? true,
       };
 
@@ -371,7 +376,14 @@ export class SupabaseService {
 
     return this.getClient()
       .from('habits')
-      .upsert({ ...habit, user_id: userId }, { onConflict: 'id' });
+      .upsert(
+        {
+          ...habit,
+          user_id: userId,
+          reset_period: habit.reset_period ?? HabitResetPeriod.WEEKLY,
+        },
+        { onConflict: 'id' },
+      );
   }
 
   async deleteHabit(id: string) {
@@ -427,6 +439,18 @@ export class SupabaseService {
     return this.getClient()
       .from('habit_completions')
       .insert({ ...completion, user_id: userId });
+  }
+
+  async deleteCompletion(id: string) {
+    if (this.isLocalDevelopmentMode() && this.isDevSessionActive()) {
+      const completions = this.readDevStore<HabitCompletionRecord>(
+        this.devCompletionKey,
+      ).filter((entry) => entry.id !== id);
+      this.writeDevStore(this.devCompletionKey, completions);
+      return { data: null, error: null };
+    }
+
+    return this.getClient().from('habit_completions').delete().eq('id', id);
   }
 
   async getCompletionHistory(habitId: string) {

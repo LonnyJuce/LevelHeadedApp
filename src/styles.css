@@ -88,16 +88,29 @@ a[mat-stroked-button]:not(:disabled):hover {
   text-shadow: 0 1px 0 rgba(124, 58, 237, 0.4);
 }
 
-.habit-delete-dialog .mdc-dialog__surface {
+.habit-delete-dialog .mdc-dialog__surface,
+.habit-delete-dialog .mat-mdc-dialog-surface {
   background: transparent !important;
   border-radius: 20px !important;
   box-shadow: none !important;
 }
 
-.habit-delete-dialog .mat-mdc-dialog-surface {
-  background: transparent !important;
+.habit-form-dialog .mdc-dialog__surface,
+.habit-form-dialog .mat-mdc-dialog-surface {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.98),
+    rgba(17, 24, 39, 0.96)
+  ) !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
   border-radius: 20px !important;
-  box-shadow: none !important;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.7) !important;
+  color: #f8fafc !important;
+}
+
+.habit-form-dialog .mat-mdc-dialog-content,
+.habit-form-dialog .mat-mdc-dialog-actions {
+  background: transparent !important;
 }
 
 input[type="number"] {

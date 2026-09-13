@@ -18,6 +18,8 @@ describe('DashboardComponent', () => {
       'getHabits',
       'getCompletionHistory',
       'deleteHabit',
+      'deleteCompletion',
+      'logCompletion',
     ]);
 
     supabase.isConfigured.and.returnValue(true);
@@ -122,6 +124,8 @@ describe('DashboardComponent', () => {
           targetPerWeek: 3,
           xpPerCompletion: 10,
           bonusXpForFullWeek: 20,
+          resetPeriod: 'weekly' as any,
+          difficulty: 'medium' as any,
         },
         completions: 1,
         isActive: true,
@@ -153,6 +157,8 @@ describe('DashboardComponent', () => {
           targetPerWeek: 3,
           xpPerCompletion: 10,
           bonusXpForFullWeek: 20,
+          resetPeriod: 'weekly' as any,
+          difficulty: 'medium' as any,
         },
         completions: 1,
         isActive: true,
@@ -165,6 +171,107 @@ describe('DashboardComponent', () => {
 
     expect(supabase.deleteHabit).toHaveBeenCalledWith('habit-123');
     expect(component.habits).toEqual([]);
+  });
+
+  it('groups quests by reset cadence and exposes incomplete items first', () => {
+    component.habits = [
+      {
+        habit: {
+          id: 'habit-weekly-hard',
+          title: 'Deep clean',
+          description: 'Clear the apartment.',
+          type: 'positive' as any,
+          attribute: 'Constitution' as any,
+          targetPerWeek: 2,
+          xpPerCompletion: 30,
+          bonusXpForFullWeek: 40,
+          resetPeriod: 'weekly' as any,
+          difficulty: 'hard' as any,
+        },
+        completions: 1,
+        isActive: true,
+      },
+      {
+        habit: {
+          id: 'habit-daily-easy',
+          title: 'Drink water',
+          description: 'Hydrate all day.',
+          type: 'positive' as any,
+          attribute: 'Constitution' as any,
+          targetPerWeek: 3,
+          xpPerCompletion: 10,
+          bonusXpForFullWeek: 20,
+          resetPeriod: 'daily' as any,
+          difficulty: 'easy' as any,
+        },
+        completions: 0,
+        isActive: true,
+      },
+      {
+        habit: {
+          id: 'habit-weekly-medium',
+          title: 'Study notes',
+          description: 'Review your notes.',
+          type: 'positive' as any,
+          attribute: 'Intelligence' as any,
+          targetPerWeek: 3,
+          xpPerCompletion: 20,
+          bonusXpForFullWeek: 50,
+          resetPeriod: 'weekly' as any,
+          difficulty: 'medium' as any,
+        },
+        completions: 3,
+        isActive: true,
+      },
+    ];
+
+    const groups = component.habitGroups;
+
+    expect(groups.map((group) => group.label)).toEqual([
+      'Daily Quests',
+      'Weekly Quests',
+    ]);
+    expect(groups[0].entries[0].habit.id).toBe('habit-daily-easy');
+    expect(groups[1].entries[0].habit.id).toBe('habit-weekly-hard');
+    expect(groups[0].pendingCount).toBe(1);
+    expect(groups[1].pendingCount).toBe(1);
+  });
+
+  it('removes the latest completion instead of inserting a negative quantity', async () => {
+    const supabase = TestBed.inject(
+      SupabaseService,
+    ) as jasmine.SpyObj<SupabaseService>;
+    component.habits = [
+      {
+        habit: {
+          id: 'habit-undo',
+          title: 'Stretching',
+          description: 'Mobility work.',
+          type: 'positive' as any,
+          attribute: 'Dexterity' as any,
+          targetPerWeek: 3,
+          xpPerCompletion: 15,
+          bonusXpForFullWeek: 25,
+          resetPeriod: 'daily' as any,
+          difficulty: 'easy' as any,
+        },
+        completions: 1,
+        isActive: true,
+      },
+    ];
+
+    supabase.getCompletionHistory.and.resolveTo({
+      data: [{ id: 'completion-123', habit_id: 'habit-undo', quantity: 1 }],
+      error: null,
+    } as any);
+    supabase.deleteCompletion.and.resolveTo({ data: null, error: null } as any);
+
+    await component.undoHabitCompletion('habit-undo');
+
+    expect(supabase.deleteCompletion).toHaveBeenCalledWith('completion-123');
+    expect(supabase.logCompletion).not.toHaveBeenCalledWith(
+      jasmine.objectContaining({ quantity: -1 }),
+    );
   });
 
   it('tracks progress toward the next level while keeping total XP visible', () => {
@@ -180,6 +287,8 @@ describe('DashboardComponent', () => {
           targetPerWeek: 4,
           xpPerCompletion: 25,
           bonusXpForFullWeek: 15,
+          resetPeriod: 'weekly' as any,
+          difficulty: 'medium' as any,
         },
         completions: 4,
         isActive: true,
@@ -204,6 +313,8 @@ describe('DashboardComponent', () => {
           targetPerWeek: 2,
           xpPerCompletion: 25,
           bonusXpForFullWeek: 0,
+          resetPeriod: 'weekly' as any,
+          difficulty: 'medium' as any,
         },
         completions: 3,
         isActive: true,

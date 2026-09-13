@@ -5,6 +5,17 @@ export enum HabitType {
   NEGATIVE = 'negative',
 }
 
+export enum HabitResetPeriod {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+}
+
+export enum HabitDifficulty {
+  EASY = 'easy',
+  MEDIUM = 'medium',
+  HARD = 'hard',
+}
+
 export enum HabitAttribute {
   STRENGTH = 'Strength',
   CONSTITUTION = 'Constitution',
@@ -25,6 +36,8 @@ export interface HabitDefinition {
   targetPerWeek: number;
   xpPerCompletion: number;
   bonusXpForFullWeek: number;
+  resetPeriod: HabitResetPeriod;
+  difficulty: HabitDifficulty;
 }
 
 export interface WeeklyHabitResult {
@@ -41,6 +54,22 @@ export class HabitRulesService {
   readonly MIN_STAT_VALUE = 1;
   readonly BASE_XP_PER_LEVEL = 100;
   readonly LEVEL_GROWTH_FACTOR = 1.35;
+
+  getDifficultyConfig(difficulty: HabitDifficulty): {
+    xpPerCompletion: number;
+    bonusXpForFullWeek: number;
+  } {
+    const config: Record<
+      HabitDifficulty,
+      { xpPerCompletion: number; bonusXpForFullWeek: number }
+    > = {
+      [HabitDifficulty.EASY]: { xpPerCompletion: 10, bonusXpForFullWeek: 25 },
+      [HabitDifficulty.MEDIUM]: { xpPerCompletion: 20, bonusXpForFullWeek: 50 },
+      [HabitDifficulty.HARD]: { xpPerCompletion: 35, bonusXpForFullWeek: 100 },
+    };
+
+    return config[difficulty] ?? config[HabitDifficulty.EASY];
+  }
 
   xpRequiredForLevel(level: number): number {
     if (level <= 1) {
@@ -61,6 +90,73 @@ export class HabitRulesService {
       [HabitAttribute.WILLPOWER]: this.MIN_STAT_VALUE,
       [HabitAttribute.CHARISMA]: this.MIN_STAT_VALUE,
     };
+  }
+
+  private startOfDay(date: Date): Date {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+
+  private startOfWeek(date: Date): Date {
+    const start = new Date(date);
+    const day = start.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() + diff);
+    return start;
+  }
+
+  private startOfNextDay(date: Date): Date {
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    nextDay.setHours(0, 0, 0, 0);
+    return nextDay;
+  }
+
+  private startOfNextWeek(date: Date): Date {
+    const nextWeek = new Date(date);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    return nextWeek;
+  }
+
+  countCompletionsInCurrentResetWindow(
+    completions: Array<{
+      completed_at?: string | null;
+      quantity?: number | null;
+    }>,
+    resetPeriod: HabitResetPeriod,
+    now = new Date(),
+  ): number {
+    if (!Array.isArray(completions)) {
+      return 0;
+    }
+
+    const windowStart =
+      resetPeriod === HabitResetPeriod.DAILY
+        ? this.startOfDay(now)
+        : this.startOfWeek(now);
+    const windowEnd =
+      resetPeriod === HabitResetPeriod.DAILY
+        ? this.startOfNextDay(windowStart)
+        : this.startOfNextWeek(windowStart);
+
+    return completions.reduce((sum, entry) => {
+      const quantity = Number(entry?.quantity ?? 0);
+      const completedAt = entry?.completed_at
+        ? new Date(entry.completed_at)
+        : null;
+
+      if (!completedAt || Number.isNaN(completedAt.getTime())) {
+        return sum;
+      }
+
+      if (completedAt >= windowStart && completedAt < windowEnd) {
+        return sum + (Number.isFinite(quantity) ? quantity : 0);
+      }
+
+      return sum;
+    }, 0);
   }
 
   calculateWeeklyResult(

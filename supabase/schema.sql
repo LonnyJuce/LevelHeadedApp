@@ -21,6 +21,8 @@ create table if not exists public.habits (
   target_per_week integer not null default 1 check (target_per_week > 0),
   xp_per_completion integer not null default 10 check (xp_per_completion > 0),
   bonus_xp_for_full_week integer not null default 0,
+  reset_period text not null default 'weekly' check (reset_period in ('daily', 'weekly')),
+  difficulty text not null default 'medium' check (difficulty in ('easy', 'medium', 'hard')),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
