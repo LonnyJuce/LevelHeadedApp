@@ -6,9 +6,16 @@
       <p class="welcome-name">Welcome, {{ userName }}</p>
     </div>
     <div class="topbar-actions">
-      <a mat-stroked-button routerLink="/achievements">Achievements</a>
-      <a mat-stroked-button routerLink="/account">Account</a>
+      <a mat-stroked-button routerLink="/achievements">
+        <mat-icon aria-hidden="true">trophy</mat-icon>
+        Achievements
+      </a>
+      <a mat-stroked-button routerLink="/account">
+        <mat-icon aria-hidden="true">person</mat-icon>
+        Account
+      </a>
       <button mat-stroked-button type="button" (click)="signOut()">
+        <mat-icon aria-hidden="true">logout</mat-icon>
         Sign out
       </button>
     </div>
@@ -102,7 +109,8 @@
       <div class="section-heading">
         <h3>Active Quests</h3>
         <button mat-flat-button type="button" (click)="openNewHabitDialog()">
-          + New Habit
+          <mat-icon aria-hidden="true">add</mat-icon>
+          New Habit
         </button>
       </div>
 
@@ -190,6 +198,7 @@
                     color="primary"
                     (click)="completeHabit(entry.habit.id)"
                   >
+                    <mat-icon aria-hidden="true">check_circle</mat-icon>
                     Mark complete
                   </button>
                   <button
@@ -200,6 +209,7 @@
                     (click)="undoHabitCompletion(entry.habit.id)"
                     aria-label="Undo completion for {{ entry.habit.title }}"
                   >
+                    <mat-icon aria-hidden="true">undo</mat-icon>
                     Undo
                   </button>
                   <button
@@ -211,6 +221,7 @@
                     "
                     aria-label="Delete habit {{ entry.habit.title }}"
                   >
+                    <mat-icon aria-hidden="true">delete</mat-icon>
                     Delete
                   </button>
                 </div>

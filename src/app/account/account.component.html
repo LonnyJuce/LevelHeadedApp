@@ -1,6 +1,9 @@
 <main class="account-shell">
   <nav class="account-nav">
-    <a mat-stroked-button routerLink="/dashboard">Return to dashboard</a>
+    <a mat-stroked-button routerLink="/dashboard">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Return to dashboard
+    </a>
   </nav>
 
   <section class="panel account-panel">
@@ -23,6 +26,7 @@
       </label>
 
       <button mat-flat-button type="button" (click)="resetPassword()">
+        <mat-icon aria-hidden="true">key</mat-icon>
         Reset password
       </button>
 
@@ -32,6 +36,7 @@
         color="warn"
         (click)="deleteAccount()"
       >
+        <mat-icon aria-hidden="true">delete_forever</mat-icon>
         Delete account
       </button>
     </div>

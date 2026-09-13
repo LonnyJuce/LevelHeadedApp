@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import {
   HabitAttribute,
   HabitDifficulty,
@@ -25,7 +26,7 @@ export interface HabitFormValues {
 @Component({
   selector: 'app-habit-form',
   standalone: true,
-  imports: [FormsModule, MatButtonModule],
+  imports: [FormsModule, MatButtonModule, MatIconModule],
   templateUrl: './habit-form.component.html',
   styleUrl: './habit-form.component.css',
 })

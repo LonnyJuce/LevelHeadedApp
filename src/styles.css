@@ -1,3 +1,4 @@
+@import "@fontsource/material-symbols-outlined";
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
 
 :root {
@@ -30,6 +31,35 @@ body {
 button,
 a {
   font: inherit;
+}
+
+.mat-icon {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.1rem;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  vertical-align: middle;
+}
+
+button[mat-flat-button] .mat-icon,
+button[mat-stroked-button] .mat-icon,
+a[mat-stroked-button] .mat-icon,
+button[mat-button] .mat-icon {
+  margin-right: 0.5rem;
 }
 
 .mat-mdc-stroked-button:not(:disabled),

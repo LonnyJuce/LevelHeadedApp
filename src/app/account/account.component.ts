@@ -2,12 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { SupabaseService } from '../core/supabase.service';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [FormsModule, RouterLink, MatButtonModule],
+  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './account.component.html',
   styleUrl: './account.component.css',
 })
