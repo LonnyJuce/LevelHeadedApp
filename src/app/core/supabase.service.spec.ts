@@ -123,6 +123,61 @@ describe('SupabaseService', () => {
     environment.production = originalProduction;
   });
 
+  it('saves and loads a player title profile through the profiles table', async () => {
+    const fakeProfileTable = {
+      select: jasmine.createSpy('select').and.returnValue({
+        eq: jasmine.createSpy('eq').and.returnValue({
+          maybeSingle: jasmine
+            .createSpy('maybeSingle')
+            .and.resolveTo({ data: null, error: null }),
+        }),
+      }),
+      upsert: jasmine.createSpy('upsert').and.resolveTo({ error: null }),
+    };
+
+    const fakeClient = {
+      from: jasmine.createSpy('from').and.callFake((table: string) => {
+        if (table === 'profiles') {
+          return fakeProfileTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+      auth: {
+        getUser: jasmine.createSpy('getUser').and.resolveTo({
+          data: { user: { id: 'user-123' } },
+        }),
+      },
+    };
+
+    spyOn(service as any, 'getClient').and.returnValue(fakeClient);
+
+    await service.savePlayerProfileProgress({
+      userId: 'user-123',
+      selectedTitle: 'Guardian',
+      unlockedAchievements: ['Rookie', 'Guardian'],
+      level: 12,
+      totalXp: 870,
+      characterClass: 'Guardian',
+    });
+
+    expect(fakeProfileTable.upsert).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        id: 'user-123',
+        selected_title: 'Guardian',
+        unlocked_achievements: ['Rookie', 'Guardian'],
+        level: 12,
+        total_xp: 870,
+        character_class: 'Guardian',
+      }),
+      jasmine.objectContaining({ onConflict: 'id' }),
+    );
+
+    const progress = await service.getPlayerProfileProgress('user-123');
+    expect(progress.error).toBeNull();
+    expect(progress.selectedTitle).toBeUndefined();
+  });
+
   it('deletes the current user through the secure database function', async () => {
     const fakeClient = {
       rpc: jasmine.createSpy('rpc').and.resolveTo({ error: null }),

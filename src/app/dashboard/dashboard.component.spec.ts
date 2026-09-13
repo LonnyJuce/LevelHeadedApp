@@ -20,6 +20,8 @@ describe('DashboardComponent', () => {
       'deleteHabit',
       'deleteCompletion',
       'logCompletion',
+      'getCurrentUserId',
+      'savePlayerProfileProgress',
     ]);
 
     supabase.isConfigured.and.returnValue(true);
@@ -43,6 +45,11 @@ describe('DashboardComponent', () => {
       },
     });
     supabase.getHabits.and.resolveTo({ data: [], error: null });
+    supabase.getCurrentUserId.and.resolveTo('user-1');
+    supabase.savePlayerProfileProgress.and.resolveTo({
+      data: null,
+      error: null,
+    });
 
     dialog = jasmine.createSpyObj('MatDialog', ['open']);
     dialog.open.and.returnValue({

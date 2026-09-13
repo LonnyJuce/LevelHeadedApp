@@ -1,6 +1,5 @@
 import { TitleCasePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -49,7 +48,6 @@ interface HexStatPoint {
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    FormsModule,
     RouterLink,
     MatButtonModule,
     MatDialogModule,
@@ -82,6 +80,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   habits: HabitProgress[] = [];
   archivedHabits: HabitProgress[] = [];
+  selectedTitle = 'Rookie';
+
+  private readonly playerProgressKey = 'level-headed-player-progress';
 
   get totalXp(): number {
     if (!this.isDataReady) {
@@ -148,6 +149,83 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.habitRules.calculateCharacterClass(
       this.playerStats,
       this.playerLevel,
+    );
+  }
+
+  get unlockedAchievements() {
+    return this.habitRules.getUnlockedAchievements(this.playerLevel, {
+      className: this.playerClass,
+      activeHabits: this.habits.length,
+      weeklyClears: this.habits.filter(
+        (entry) => entry.completions >= entry.habit.targetPerWeek,
+      ).length,
+    });
+  }
+
+  get playerTitle(): string {
+    return this.habitRules.getCurrentTitle(
+      this.playerLevel,
+      this.selectedTitle,
+      {
+        className: this.playerClass,
+        activeHabits: this.habits.length,
+        weeklyClears: this.habits.filter(
+          (entry) => entry.completions >= entry.habit.targetPerWeek,
+        ).length,
+      },
+    );
+  }
+
+  get classFlavorText(): string {
+    switch (this.playerClass) {
+      case 'Guardian':
+        return 'A steadfast defender who stands firm in every storm.';
+      case 'Scholar':
+        return 'A sharp mind turning discipline into progress.';
+      case 'Ranger':
+        return 'A quiet tracker who moves with purpose and pace.';
+      case 'Mystic':
+        return 'A seeker of hidden patterns and deeper purpose.';
+      case 'Sentinel':
+        return 'A disciplined protector who strikes with speed and resolve.';
+      case 'Titan':
+        return 'A towering force that breaks resistance with patient might.';
+      case 'Archmage':
+        return 'A disciplined wielder of arcane precision and control.';
+      case 'Shadowblade':
+        return 'A fluid duelist moving faster than the eye can track.';
+      case 'Warden':
+        return 'A towering guardian of balance, strength, and vigilance.';
+      case 'Ascendant':
+        return 'A rare hero standing at the edge of legend.';
+      default:
+        return 'A hero still shaping their legend.';
+    }
+  }
+
+  get titleFlavorText(): string {
+    const title = this.playerTitle;
+    const titleMap: Record<string, string> = {
+      Rookie: 'The first step on a longer journey.',
+      Trailblazer: 'A pathfinder blazing a fresh route ahead.',
+      Vanguard: 'A bold leader rising to the front.',
+      Bulwark: 'A protector standing between chaos and calm.',
+      Archivist: 'A mind that learns, adapts, and prevails.',
+      Pathfinder: 'A traveler who keeps pace with the wild.',
+      Oracle: 'A keeper of hidden truths and quiet power.',
+      Watchman: 'A disciplined sentinel guarding the threshold of progress.',
+      Colossus: 'A heavy-footed conqueror who bends the battlefield to will.',
+      Arcanist: 'A master of arcane discipline and exacting focus.',
+      Nightblade: 'A stealthy duelist whose motion is both elegant and lethal.',
+      Keepkeeper: 'A towering guardian of balance, strength, and vigilance.',
+      'Quest Starter': 'A dependable adventurer ready for the next quest.',
+      Completionist: 'A relentless finisher who leaves no goal behind.',
+      Mythic: 'A legendary force celebrated by the realm.',
+      Ascendant: 'A rare champion standing above the ordinary.',
+    };
+
+    return (
+      titleMap[title] ?? 'A title earned through perseverance and progress.'
     );
   }
 
@@ -456,6 +534,130 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const metadataName = session?.user?.user_metadata?.['full_name'];
     const emailName = session?.user?.email?.split('@')[0] ?? 'Hero';
     this.userName = metadataName || emailName || 'Hero';
+    this.loadStoredPlayerProgress();
+  }
+
+  private loadStoredPlayerProgress(): void {
+    try {
+      const raw = localStorage.getItem(this.playerProgressKey);
+      const options = {
+        className: this.playerClass,
+        activeHabits: this.habits.length,
+        weeklyClears: this.habits.filter(
+          (entry) => entry.completions >= entry.habit.targetPerWeek,
+        ).length,
+      };
+
+      if (!raw) {
+        this.selectedTitle = this.habitRules.getCurrentTitle(
+          this.playerLevel,
+          null,
+          options,
+        );
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as {
+        level?: number;
+        title?: string;
+        className?: string;
+        activeHabits?: number;
+        weeklyClears?: number;
+      };
+      const level = Number.isFinite(parsed.level)
+        ? Number(parsed.level)
+        : this.playerLevel;
+      const unlocked = this.habitRules.getUnlockedAchievements(level, {
+        className: parsed.className ?? options.className,
+        activeHabits: Number.isFinite(parsed.activeHabits)
+          ? Number(parsed.activeHabits)
+          : options.activeHabits,
+        weeklyClears: Number.isFinite(parsed.weeklyClears)
+          ? Number(parsed.weeklyClears)
+          : options.weeklyClears,
+      });
+      const storedTitle =
+        parsed.title ??
+        this.habitRules.getCurrentTitle(level, null, {
+          className: parsed.className ?? options.className,
+          activeHabits: Number.isFinite(parsed.activeHabits)
+            ? Number(parsed.activeHabits)
+            : options.activeHabits,
+          weeklyClears: Number.isFinite(parsed.weeklyClears)
+            ? Number(parsed.weeklyClears)
+            : options.weeklyClears,
+        });
+      this.selectedTitle = unlocked.some(
+        (achievement) => achievement.title === storedTitle,
+      )
+        ? storedTitle
+        : this.habitRules.getCurrentTitle(level, null, {
+            className: parsed.className ?? options.className,
+            activeHabits: Number.isFinite(parsed.activeHabits)
+              ? Number(parsed.activeHabits)
+              : options.activeHabits,
+            weeklyClears: Number.isFinite(parsed.weeklyClears)
+              ? Number(parsed.weeklyClears)
+              : options.weeklyClears,
+          });
+    } catch {
+      this.selectedTitle = this.habitRules.getCurrentTitle(
+        this.playerLevel,
+        null,
+        {
+          className: this.playerClass,
+          activeHabits: this.habits.length,
+          weeklyClears: this.habits.filter(
+            (entry) => entry.completions >= entry.habit.targetPerWeek,
+          ).length,
+        },
+      );
+    }
+  }
+
+  async savePlayerProgress(): Promise<void> {
+    const level = this.playerLevel;
+    const weeklyClears = this.habits.filter(
+      (entry) => entry.completions >= entry.habit.targetPerWeek,
+    ).length;
+    const title = this.habitRules.getCurrentTitle(level, this.selectedTitle, {
+      className: this.playerClass,
+      activeHabits: this.habits.length,
+      weeklyClears,
+    });
+
+    const unlockedTitles = this.habitRules
+      .getUnlockedAchievements(level, {
+        className: this.playerClass,
+        activeHabits: this.habits.length,
+        weeklyClears,
+      })
+      .map((achievement) => achievement.title);
+
+    localStorage.setItem(
+      this.playerProgressKey,
+      JSON.stringify({
+        level,
+        title,
+        className: this.playerClass,
+        activeHabits: this.habits.length,
+        weeklyClears,
+        unlockedAchievements: unlockedTitles,
+        totalXp: this.totalXp,
+      }),
+    );
+
+    const userId = await this.supabase.getCurrentUserId();
+    if (userId) {
+      await this.supabase.savePlayerProfileProgress({
+        userId,
+        selectedTitle: title,
+        unlockedAchievements: unlockedTitles,
+        level,
+        totalXp: this.totalXp,
+        characterClass: this.playerClass,
+      });
+    }
   }
 
   private async loadUserHabits(): Promise<void> {
@@ -498,6 +700,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.habits = loaded.filter((entry) => entry.isActive);
     this.archivedHabits = loaded.filter((entry) => !entry.isActive);
     this.isDataReady = true;
+    this.loadStoredPlayerProgress();
+    this.savePlayerProgress();
   }
 
   openNewHabitDialog(): void {

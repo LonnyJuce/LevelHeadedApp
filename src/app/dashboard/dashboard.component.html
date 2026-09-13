@@ -6,10 +6,7 @@
       <p class="welcome-name">Welcome, {{ userName }}</p>
     </div>
     <div class="topbar-actions">
-      <div class="level-pill" aria-live="polite">
-        <span>LVL</span>
-        <strong>{{ playerLevel }}</strong>
-      </div>
+      <a mat-stroked-button routerLink="/achievements">Achievements</a>
       <a mat-stroked-button routerLink="/account">Account</a>
       <button mat-stroked-button type="button" (click)="signOut()">
         Sign out
@@ -21,7 +18,24 @@
     <section class="summary-grid">
       <article class="panel hero-panel">
         <p class="label">Current Quest Rank</p>
-        <h2>{{ playerClass }}</h2>
+        <div class="hero-summary">
+          <div class="level-pill" aria-live="polite">
+            <span>LVL</span>
+            <strong>{{ playerLevel }}</strong>
+          </div>
+          <div class="hero-summary-meta">
+            <div class="meta-block">
+              <span class="title-label">Class</span>
+              <strong>{{ playerClass }}</strong>
+              <small>{{ classFlavorText }}</small>
+            </div>
+            <div class="meta-block">
+              <span class="title-label">Title</span>
+              <strong>{{ playerTitle }}</strong>
+              <small>{{ titleFlavorText }}</small>
+            </div>
+          </div>
+        </div>
         <div class="xp-row">
           <span>Progress to level {{ playerLevel + 1 }}</span>
           <strong>{{ currentLevelXp }} / {{ xpToNextLevel }} XP</strong>

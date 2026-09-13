@@ -119,4 +119,85 @@ describe('HabitRulesService', () => {
     expect(service.calculatePlayerLevel(100)).toBe(2);
     expect(service.calculatePlayerLevel(250)).toBe(3);
   });
+
+  it('unlocks level-based achievements that each grant a title', () => {
+    const unlocked = service.getUnlockedAchievements(12);
+
+    expect(unlocked.map((achievement) => achievement.title)).toContain(
+      'Rookie',
+    );
+    expect(unlocked.map((achievement) => achievement.title)).toContain(
+      'Trailblazer',
+    );
+    expect(
+      unlocked.some((achievement) => achievement.requiredLevel === 10),
+    ).toBeTrue();
+  });
+
+  it('falls back to the highest unlocked title when a saved title is no longer valid', () => {
+    expect(service.getCurrentTitle(8, 'Mythic')).toBe('Trailblazer');
+    expect(service.getCurrentTitle(25, 'Mythic')).toBe('Mythic');
+  });
+
+  it('adds class and consistency milestones beyond raw level progression', () => {
+    const unlocked = service.getUnlockedAchievements(12, {
+      className: 'Guardian',
+      activeHabits: 4,
+      weeklyClears: 3,
+    });
+
+    expect(unlocked.map((achievement) => achievement.title)).toContain(
+      'Bulwark',
+    );
+    expect(unlocked.map((achievement) => achievement.title)).toContain(
+      'Quest Starter',
+    );
+    expect(unlocked.map((achievement) => achievement.title)).toContain(
+      'Completionist',
+    );
+  });
+
+  it('supports a fifth class pair and its advanced evolution', () => {
+    const sentinelStats = {
+      [HabitAttribute.STRENGTH]: 8,
+      [HabitAttribute.CONSTITUTION]: 3,
+      [HabitAttribute.DEXTERITY]: 7,
+      [HabitAttribute.INTELLIGENCE]: 1,
+      [HabitAttribute.WILLPOWER]: 1,
+      [HabitAttribute.CHARISMA]: 2,
+    };
+
+    expect(service.calculateCharacterClass(sentinelStats, 30)).toBe('Sentinel');
+    expect(service.calculateCharacterClass(sentinelStats, 60)).toBe('Warden');
+  });
+
+  it('includes a title achievement for every class path', () => {
+    const titlesByClass = {
+      Guardian: 'Bulwark',
+      Scholar: 'Archivist',
+      Ranger: 'Pathfinder',
+      Mystic: 'Oracle',
+      Sentinel: 'Watchman',
+      Titan: 'Colossus',
+      Archmage: 'Arcanist',
+      Shadowblade: 'Nightblade',
+      Warden: 'Keepkeeper',
+      Ascendant: 'Ascendant',
+    };
+
+    Object.entries(titlesByClass).forEach(([className, expectedTitle]) => {
+      const unlocked = service.getUnlockedAchievements(60, { className });
+      const hasMatchingTitle = unlocked.some(
+        (achievement) => achievement.title === expectedTitle,
+      );
+
+      if (!hasMatchingTitle) {
+        throw new Error(
+          `Missing title achievement for ${className} (expected ${expectedTitle})`,
+        );
+      }
+
+      expect(hasMatchingTitle).toBeTrue();
+    });
+  });
 });

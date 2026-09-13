@@ -1,0 +1,54 @@
+<main class="achievements-shell">
+  <nav class="achievements-nav">
+    <a mat-stroked-button routerLink="/dashboard">Return to dashboard</a>
+  </nav>
+
+  <section class="panel achievements-panel">
+    <div class="section-heading">
+      <h3>Achievements</h3>
+    </div>
+
+    <div class="title-picker-wrap">
+      <label for="achievement-title-select">Current title</label>
+      <select
+        id="achievement-title-select"
+        [ngModel]="selectedTitle"
+        (ngModelChange)="selectedTitle = $event; saveSelectedTitle()"
+      >
+        @for (achievement of unlockedAchievements; track achievement.id) {
+          <option [value]="achievement.title">{{ achievement.title }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="achievement-grid">
+      @for (achievement of allAchievements; track achievement.id) {
+        <article
+          class="achievement-card"
+          [class.unlocked]="unlockedAchievements.some((item) => item.id === achievement.id)"
+        >
+          <div class="achievement-head">
+            <p class="achievement-tag">Achievement</p>
+            <span class="achievement-status">
+              {{
+                unlockedAchievements.some((item) => item.id === achievement.id)
+                  ? 'Unlocked'
+                  : 'Hidden'
+              }}
+            </span>
+          </div>
+
+          @if (
+            unlockedAchievements.some((item) => item.id === achievement.id)
+          ) {
+            <h4>{{ achievement.title }}</h4>
+            <p>{{ achievement.description }}</p>
+          } @else {
+            <h4>???</h4>
+            <p>Keep progressing to reveal this title.</p>
+          }
+        </article>
+      }
+    </div>
+  </section>
+</main>

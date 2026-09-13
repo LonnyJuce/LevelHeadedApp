@@ -27,6 +27,16 @@ export enum HabitAttribute {
 
 export type PlayerStats = Record<HabitAttribute, number>;
 
+export interface AchievementUnlock {
+  id: string;
+  title: string;
+  description: string;
+  requiredLevel?: number;
+  requiredClass?: string;
+  requiredActiveHabits?: number;
+  requiredWeeklyClears?: number;
+}
+
 export interface HabitDefinition {
   id: string;
   title: string;
@@ -54,6 +64,157 @@ export class HabitRulesService {
   readonly MIN_STAT_VALUE = 1;
   readonly BASE_XP_PER_LEVEL = 100;
   readonly LEVEL_GROWTH_FACTOR = 1.35;
+
+  readonly titleAchievements: AchievementUnlock[] = [
+    {
+      id: 'rookie',
+      title: 'Rookie',
+      description: 'Reached level 1.',
+      requiredLevel: 1,
+    },
+    {
+      id: 'trailblazer',
+      title: 'Trailblazer',
+      description: 'Reached level 5.',
+      requiredLevel: 5,
+    },
+    {
+      id: 'vanguard',
+      title: 'Vanguard',
+      description: 'Reached level 10.',
+      requiredLevel: 10,
+    },
+    {
+      id: 'guardian',
+      title: 'Bulwark',
+      description: 'Unlocked the Guardian class path.',
+      requiredClass: 'Guardian',
+    },
+    {
+      id: 'scholar',
+      title: 'Archivist',
+      description: 'Unlocked the Scholar class path.',
+      requiredClass: 'Scholar',
+    },
+    {
+      id: 'ranger',
+      title: 'Pathfinder',
+      description: 'Unlocked the Ranger class path.',
+      requiredClass: 'Ranger',
+    },
+    {
+      id: 'mystic',
+      title: 'Oracle',
+      description: 'Unlocked the Mystic class path.',
+      requiredClass: 'Mystic',
+    },
+    {
+      id: 'sentinel',
+      title: 'Watchman',
+      description: 'Unlocked the Sentinel class path.',
+      requiredClass: 'Sentinel',
+    },
+    {
+      id: 'titan',
+      title: 'Colossus',
+      description: 'Unlocked the Titan class path.',
+      requiredClass: 'Titan',
+    },
+    {
+      id: 'archmage',
+      title: 'Arcanist',
+      description: 'Unlocked the Archmage class path.',
+      requiredClass: 'Archmage',
+    },
+    {
+      id: 'shadowblade',
+      title: 'Nightblade',
+      description: 'Unlocked the Shadowblade class path.',
+      requiredClass: 'Shadowblade',
+    },
+    {
+      id: 'warden',
+      title: 'Keepkeeper',
+      description: 'Unlocked the Warden class path.',
+      requiredClass: 'Warden',
+    },
+    {
+      id: 'quest-starter',
+      title: 'Quest Starter',
+      description: 'Maintained 3 active habits.',
+      requiredActiveHabits: 3,
+    },
+    {
+      id: 'completionist',
+      title: 'Completionist',
+      description: 'Cleared 3 weekly quests.',
+      requiredWeeklyClears: 3,
+    },
+    {
+      id: 'mythic',
+      title: 'Mythic',
+      description: 'Reached level 25.',
+      requiredLevel: 25,
+    },
+    {
+      id: 'ascendant',
+      title: 'Ascendant',
+      description: 'Reached level 50.',
+      requiredLevel: 50,
+    },
+  ];
+
+  getUnlockedAchievements(
+    level: number,
+    options: {
+      className?: string;
+      activeHabits?: number;
+      weeklyClears?: number;
+    } = {},
+  ): AchievementUnlock[] {
+    const { className, activeHabits = 0, weeklyClears = 0 } = options;
+
+    return this.titleAchievements.filter((achievement) => {
+      if (achievement.requiredLevel !== undefined) {
+        return level >= achievement.requiredLevel;
+      }
+
+      if (achievement.requiredClass !== undefined) {
+        return className === achievement.requiredClass;
+      }
+
+      if (achievement.requiredActiveHabits !== undefined) {
+        return activeHabits >= achievement.requiredActiveHabits;
+      }
+
+      if (achievement.requiredWeeklyClears !== undefined) {
+        return weeklyClears >= achievement.requiredWeeklyClears;
+      }
+
+      return false;
+    });
+  }
+
+  getCurrentTitle(
+    level: number,
+    selectedTitle?: string | null,
+    options: {
+      className?: string;
+      activeHabits?: number;
+      weeklyClears?: number;
+    } = {},
+  ): string {
+    const unlocked = this.getUnlockedAchievements(level, options);
+
+    if (
+      selectedTitle &&
+      unlocked.some((achievement) => achievement.title === selectedTitle)
+    ) {
+      return selectedTitle;
+    }
+
+    return unlocked[unlocked.length - 1]?.title ?? 'Rookie';
+  }
 
   getDifficultyConfig(difficulty: HabitDifficulty): {
     xpPerCompletion: number;
@@ -243,65 +404,66 @@ export class HabitRulesService {
     const [primaryStat] = ranked[0];
     const secondaryStat = ranked[1]?.[0];
 
+    const strengthConstitutionPair =
+      (primaryStat === HabitAttribute.STRENGTH &&
+        secondaryStat === HabitAttribute.CONSTITUTION) ||
+      (primaryStat === HabitAttribute.CONSTITUTION &&
+        secondaryStat === HabitAttribute.STRENGTH);
+
+    const intelligenceWillpowerPair =
+      (primaryStat === HabitAttribute.INTELLIGENCE &&
+        secondaryStat === HabitAttribute.WILLPOWER) ||
+      (primaryStat === HabitAttribute.WILLPOWER &&
+        secondaryStat === HabitAttribute.INTELLIGENCE);
+
+    const dexterityCharismaPair =
+      (primaryStat === HabitAttribute.DEXTERITY &&
+        secondaryStat === HabitAttribute.CHARISMA) ||
+      (primaryStat === HabitAttribute.CHARISMA &&
+        secondaryStat === HabitAttribute.DEXTERITY);
+
+    const willpowerCharismaPair =
+      (primaryStat === HabitAttribute.WILLPOWER &&
+        secondaryStat === HabitAttribute.CHARISMA) ||
+      (primaryStat === HabitAttribute.CHARISMA &&
+        secondaryStat === HabitAttribute.WILLPOWER);
+
+    const strengthDexterityPair =
+      (primaryStat === HabitAttribute.STRENGTH &&
+        secondaryStat === HabitAttribute.DEXTERITY) ||
+      (primaryStat === HabitAttribute.DEXTERITY &&
+        secondaryStat === HabitAttribute.STRENGTH);
+
     if (level >= 50) {
-      if (
-        (primaryStat === HabitAttribute.STRENGTH &&
-          secondaryStat === HabitAttribute.CONSTITUTION) ||
-        (primaryStat === HabitAttribute.CONSTITUTION &&
-          secondaryStat === HabitAttribute.STRENGTH)
-      ) {
+      if (strengthConstitutionPair) {
         return 'Titan';
       }
-      if (
-        (primaryStat === HabitAttribute.INTELLIGENCE &&
-          secondaryStat === HabitAttribute.WILLPOWER) ||
-        (primaryStat === HabitAttribute.WILLPOWER &&
-          secondaryStat === HabitAttribute.INTELLIGENCE)
-      ) {
+      if (intelligenceWillpowerPair) {
         return 'Archmage';
       }
-      if (
-        (primaryStat === HabitAttribute.DEXTERITY &&
-          secondaryStat === HabitAttribute.CHARISMA) ||
-        (primaryStat === HabitAttribute.CHARISMA &&
-          secondaryStat === HabitAttribute.DEXTERITY)
-      ) {
+      if (dexterityCharismaPair) {
         return 'Shadowblade';
+      }
+      if (strengthDexterityPair) {
+        return 'Warden';
       }
       return 'Ascendant';
     }
 
-    if (
-      (primaryStat === HabitAttribute.STRENGTH &&
-        secondaryStat === HabitAttribute.CONSTITUTION) ||
-      (primaryStat === HabitAttribute.CONSTITUTION &&
-        secondaryStat === HabitAttribute.STRENGTH)
-    ) {
+    if (strengthConstitutionPair) {
       return 'Guardian';
     }
-    if (
-      (primaryStat === HabitAttribute.INTELLIGENCE &&
-        secondaryStat === HabitAttribute.WILLPOWER) ||
-      (primaryStat === HabitAttribute.WILLPOWER &&
-        secondaryStat === HabitAttribute.INTELLIGENCE)
-    ) {
+    if (intelligenceWillpowerPair) {
       return 'Scholar';
     }
-    if (
-      (primaryStat === HabitAttribute.DEXTERITY &&
-        secondaryStat === HabitAttribute.CHARISMA) ||
-      (primaryStat === HabitAttribute.CHARISMA &&
-        secondaryStat === HabitAttribute.DEXTERITY)
-    ) {
+    if (dexterityCharismaPair) {
       return 'Ranger';
     }
-    if (
-      (primaryStat === HabitAttribute.WILLPOWER &&
-        secondaryStat === HabitAttribute.CHARISMA) ||
-      (primaryStat === HabitAttribute.CHARISMA &&
-        secondaryStat === HabitAttribute.WILLPOWER)
-    ) {
+    if (willpowerCharismaPair) {
       return 'Mystic';
+    }
+    if (strengthDexterityPair) {
+      return 'Sentinel';
     }
     return 'Adept';
   }

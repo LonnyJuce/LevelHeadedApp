@@ -138,9 +138,53 @@ a[mat-stroked-button] {
   color: white;
 }
 
-.hero-panel h2 {
-  margin: 0 0 20px;
-  font-size: clamp(1.5rem, 3vw, 2.2rem);
+.hero-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.hero-summary-meta {
+  display: grid;
+  gap: 10px;
+  flex: 1;
+}
+
+.hero-summary-meta {
+  display: grid;
+  gap: 12px;
+  flex: 1;
+}
+
+.meta-block {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.meta-block strong {
+  font-size: 1.08rem;
+}
+
+.meta-block small {
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.title-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+}
+
+.hero-summary .level-pill {
+  flex-shrink: 0;
 }
 
 .xp-row,

@@ -41,6 +41,15 @@ export interface HabitCompletionRecord {
   notes?: string | null;
 }
 
+export interface PlayerProfileProgress {
+  userId?: string;
+  selectedTitle?: string;
+  unlockedAchievements?: string[];
+  level?: number;
+  totalXp?: number;
+  characterClass?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -50,6 +59,7 @@ export class SupabaseService {
   private readonly devPasswordKeyPrefix = 'level-headed-dev-password:';
   private readonly devHabitsKey = 'level-headed-dev-habits';
   private readonly devCompletionKey = 'level-headed-dev-completions';
+  private readonly devPlayerProgressKey = 'level-headed-player-progress';
 
   private getStableDevUserId(email: string): string {
     const normalized = email.trim().toLowerCase();
@@ -314,6 +324,129 @@ export class SupabaseService {
 
     const { data } = await this.getClient().auth.getUser();
     return data.user?.id ?? null;
+  }
+
+  async getPlayerProfileProgress(userId?: string): Promise<{
+    error: any | null;
+    selectedTitle?: string;
+    unlockedAchievements: string[];
+    level: number;
+    totalXp: number;
+    characterClass?: string;
+  }> {
+    const resolvedUserId = userId ?? (await this.getCurrentUserId());
+    if (!resolvedUserId) {
+      return {
+        error: null,
+        unlockedAchievements: [],
+        level: 1,
+        totalXp: 0,
+      };
+    }
+
+    if (this.isLocalDevelopmentMode()) {
+      const raw = localStorage.getItem(this.devPlayerProgressKey);
+      if (!raw) {
+        return {
+          error: null,
+          unlockedAchievements: [],
+          level: 1,
+          totalXp: 0,
+        };
+      }
+
+      try {
+        const parsed = JSON.parse(raw) as {
+          level?: number;
+          title?: string;
+          className?: string;
+          unlockedAchievements?: string[];
+          totalXp?: number;
+        };
+
+        return {
+          error: null,
+          selectedTitle: parsed.title,
+          unlockedAchievements: Array.isArray(parsed.unlockedAchievements)
+            ? parsed.unlockedAchievements
+            : [],
+          level: Number.isFinite(parsed.level) ? Number(parsed.level) : 1,
+          totalXp: Number.isFinite(parsed.totalXp) ? Number(parsed.totalXp) : 0,
+          characterClass: parsed.className,
+        };
+      } catch {
+        return {
+          error: null,
+          unlockedAchievements: [],
+          level: 1,
+          totalXp: 0,
+        };
+      }
+    }
+
+    const { data, error } = await this.getClient()
+      .from('profiles')
+      .select(
+        'selected_title, unlocked_achievements, level, total_xp, character_class',
+      )
+      .eq('id', resolvedUserId)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        error,
+        unlockedAchievements: [],
+        level: 1,
+        totalXp: 0,
+      };
+    }
+
+    return {
+      error: null,
+      selectedTitle: data?.selected_title ?? undefined,
+      unlockedAchievements: Array.isArray(data?.unlocked_achievements)
+        ? data.unlocked_achievements
+        : [],
+      level: Number(data?.level ?? 1),
+      totalXp: Number(data?.total_xp ?? 0),
+      characterClass: data?.character_class ?? undefined,
+    };
+  }
+
+  async savePlayerProfileProgress(progress: PlayerProfileProgress) {
+    const resolvedUserId = progress.userId ?? (await this.getCurrentUserId());
+    if (!resolvedUserId) {
+      throw new Error('You must be signed in to save your profile progress.');
+    }
+
+    const payload = {
+      id: resolvedUserId,
+      selected_title: progress.selectedTitle ?? null,
+      unlocked_achievements: progress.unlockedAchievements ?? [],
+      level: Number(progress.level ?? 1),
+      total_xp: Number(progress.totalXp ?? 0),
+      character_class: progress.characterClass ?? 'Initiate',
+      updated_at: new Date().toISOString(),
+    };
+
+    if (this.isLocalDevelopmentMode()) {
+      localStorage.setItem(
+        this.devPlayerProgressKey,
+        JSON.stringify({
+          level: payload.level,
+          title: progress.selectedTitle ?? 'Rookie',
+          className: payload.character_class,
+          unlockedAchievements: payload.unlocked_achievements,
+          totalXp: payload.total_xp,
+        }),
+      );
+
+      return { data: payload, error: null };
+    }
+
+    return this.getClient()
+      .from('profiles')
+      .upsert(payload, { onConflict: 'id' });
   }
 
   async getHabits(includeInactive = false) {

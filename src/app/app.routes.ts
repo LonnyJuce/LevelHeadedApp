@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AccountComponent } from './account/account.component';
+import { AchievementsComponent } from './achievements/achievements.component';
 import { AuthPageComponent } from './auth-page/auth-page.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
@@ -10,6 +11,11 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'achievements',
+    component: AchievementsComponent,
     canActivate: [authGuard],
   },
   { path: 'account', component: AccountComponent, canActivate: [authGuard] },
